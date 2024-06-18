@@ -1,0 +1,3 @@
+1. update getters/setters in ServerSettings.java by getting rid of most variables
+2. add a better way to edit server settings through discord
+3. try setting join message through a modal
