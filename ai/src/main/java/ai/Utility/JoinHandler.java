@@ -47,7 +47,14 @@ public class JoinHandler {
     }
 
     public String getJoinMessage() {
-        String joinMessage = serverSettings.getJoinMessage();
+        String joinMessage = "";
+        try {
+            if (serverSettings.getJoinMessage() != null) {
+                joinMessage = serverSettings.getJoinMessage();
+            }
+        } catch (DocumentUnavailableException e) {
+            e.printStackTrace();
+        }
         for (Entry<String, String> replaceEntry : joinMessageReplaceValues) {
             joinMessage = joinMessage.replaceAll(replaceEntry.getKey(), replaceEntry.getValue());
         }

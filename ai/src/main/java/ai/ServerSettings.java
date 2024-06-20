@@ -1,33 +1,82 @@
 package ai;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.bson.Document;
-import org.javacord.api.entity.channel.ServerChannel;
+import org.bson.json.JsonWriterSettings;
+import org.javacord.api.interaction.InteractionBase;
 
 import ai.Database.DocumentUnavailableException;
 
 public class ServerSettings {
     private long serverId;
 
-    // remove all variables except serverID to make everything static
-    private Long muteRoleID;
+    // private Long muteRoleID;
 
-    private boolean modLogEnabled;
-    private Long logChannelID;
-    private boolean logBans;
-    private boolean logMutes;
-    private boolean logKicks;
+    // private boolean modLogEnabled;
+    // private Long logChannelID;
+    // private boolean logBans;
+    // private boolean logMutes;
+    // private boolean logKicks;
 
-    private boolean joinMessageEnabled;
-    private Long joinMessageChannelID;
-    private String joinMessage;
-    private List<Long> joinRoleIDs;
+    // private boolean joinMessageEnabled;
+    // private Long joinMessageChannelID;
+    // private String joinMessage;
+    // private List<Long> joinRoleIDs;
 
     public ServerSettings(long serverId) {
         this.serverId = serverId;
-        
+    }
+
+    public long getServerId() {
+        return this.serverId;
+    }
+
+    private static final List<String> editableKeys = List.of(
+        "muteRoleID", 
+        "modLogEnabled", 
+        "logChannelID", 
+        "logBans", 
+        "logMutes", 
+        "logKicks", 
+        "joinMessageEnabled", 
+        "joinMessageChannelID", 
+        "joinRoleIDs"
+    );
+    public String getSettingsJSON() throws DocumentUnavailableException {
+        Document settingsCopy = Database.cloneDocument(Database.getServerDoc(serverId));
+        settingsCopy.keySet().retainAll(editableKeys);
+        return settingsCopy.toJson(JsonWriterSettings.builder().indent(true).build());
+    }
+
+    private Document verifySettingsJSON(String settingsJSON) throws InvalidSettingsJsonException {
+        Document settings = Document.parse(settingsJSON);
+        settings.keySet().retainAll(editableKeys);
+        if (settings.keySet().containsAll(editableKeys) == false) {
+            throw new InvalidSettingsJsonException();
+        }
+        return settings;
+    }
+    public static class InvalidSettingsJsonException extends Exception {
+        public InvalidSettingsJsonException() {
+            super();
+        }
+        public static void sendStandardResponse(InteractionBase interaction) {
+            interaction.createImmediateResponder().setContent("Invalid settings format. No changes applied.").respond();
+        }
+    }
+
+    public void updateSettings(String settingsJSON) throws DocumentUnavailableException, InvalidSettingsJsonException {
+        Document updates = verifySettingsJSON(settingsJSON);
+        Document updatedSettings = Database.updateDocument(serverId, updates);
+        Database.putDocInCache(serverId, updatedSettings);
+    }
+    
+    public void setMuteRoleID(Long id) throws DocumentUnavailableException {
+        Database.getServerDoc(serverId).put("muteRoleID", id);
+    }
+    public Long getMuteRoleID() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getLong("muteRoleID");
     }
 
     public boolean isJoinMessageEnabled() throws DocumentUnavailableException {
@@ -42,76 +91,36 @@ public class ServerSettings {
         return Database.getServerDoc(serverId).getLong("joinMessageChannelID");
     }
 
-    public String getJoinMessage() {
-        return joinMessage;
+    public String getJoinMessage() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getString("joinMessage");
     }
 
     public void setJoinMessage(String newJoinMessage) throws DocumentUnavailableException {
         Database.getServerDoc(serverId).put("joinMessage", newJoinMessage);
-        this.joinMessage = newJoinMessage;
     }
 
-    public String getJoinRoles() {
-        String ids = "";
-        for (Long id : joinRoleIDs) {
-            ids += "<@&" + id + "> ";
-        }
-        return ids;
+    public void setLogChannelID(Long id) throws DocumentUnavailableException {
+        Database.getServerDoc(serverId).put("logChannelID", id);
     }
 
-    @SuppressWarnings("unchecked")
-    public void pullAllSettings() throws DocumentUnavailableException {
-        Document mongoDoc = Database.getServerDoc(serverId);
-        muteRoleID = mongoDoc.getLong("muteRoleID");
-
-        modLogEnabled = mongoDoc.getBoolean("modLogEnabled", false);
-        logChannelID = mongoDoc.getLong("logChannelID");
-        logBans = mongoDoc.getBoolean("logBans", false);
-        logMutes = mongoDoc.getBoolean("logMutes", false);
-        logKicks = mongoDoc.getBoolean("logKicks", false);
-
-        joinMessageChannelID = mongoDoc.getLong("joinMessageChannelID");
-        joinMessage = mongoDoc.getString("joinMessage");
-        joinRoleIDs = mongoDoc.getList("joinRoleIDs", long.class, Collections.EMPTY_LIST);
+    public Long getLogChannelID() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getLong("logChannelID");
     }
 
-    public Long getServerId() {
-        return serverId;
-    }
-    
-    public void setMuteRoleID(Long id) {
-        muteRoleID = id;
-    }
-    public Long getMuteRoleID() {
-        return muteRoleID;
-    }
-    
-    public void updateModLogSettings(boolean modLogEnabled, ServerChannel channel, boolean logBans, boolean logMutes, boolean logKicks) {
-        this.modLogEnabled = modLogEnabled;
-        this.logChannelID = channel != null ? channel.getId() : null;
-        this.logBans = logBans;
-        this.logMutes = logMutes;
-        this.logKicks = logKicks;
+    public boolean isModLogEnabled() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getBoolean("modLogEnabled", false);
     }
 
-    public void setLogChannelID(Long id) {
-        logChannelID = id;
-    }
-    public Long getLogChannelID() {
-        return logChannelID;
+    public boolean isLogBanEnabled() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getBoolean("logBans", false);
     }
 
-    public boolean isLogEnabled() {
-        return modLogEnabled;
+    public boolean isLogMuteEnabled() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getBoolean("logMutes", false);
     }
-    public boolean isLogBanEnabled() {
-        return logBans;
-    }
-    public boolean isLogMuteEnabled() {
-        return logMutes;
-    }
-    public boolean isLogKicksEnabled() {
-        return logKicks;
+
+    public boolean isLogKicksEnabled() throws DocumentUnavailableException {
+        return Database.getServerDoc(serverId).getBoolean("logKicks", false);
     }
     
 }

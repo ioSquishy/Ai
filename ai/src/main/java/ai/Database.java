@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -17,7 +18,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.client.model.Filters.eq;
 import org.bson.Document;
-import org.javacord.api.interaction.SlashCommandInteraction;
+import org.bson.json.JsonMode;
+import org.bson.json.JsonWriterSettings;
+import org.javacord.api.interaction.InteractionBase;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -99,26 +102,25 @@ public class Database implements Serializable {
         }
     }
 
+    public static Document cloneDocument(Document toClone) {
+        return new Document(toClone);
+    }
+
     public static Document getServerDoc(long serverID) throws DocumentUnavailableException {
         System.out.println(serverID);
         Document doc = checkCache(serverID);
         if (doc != null) { // if doc in cache return cached doc
-            System.out.println("doc in cache");
             return doc;
         } else { // if doc not in cache check database
-            System.out.println("doc not in cache");
             doc = checkDatabase(serverID);
         }
         if (doc != null) { // if doc in database add doc to cache and return doc
-            System.out.println("doc in database");
-            addDocToCache(serverID, doc);
+            putDocInCache(serverID, doc);
             return doc;
         } else if (mongoOK) { // if doc not retrieved from database check if mongo is ok
-            System.out.println("mongok status: " + mongoOK);
-            System.out.println("adding doc to database and cache");
             // if mongo is ok create a new doc in database and add to cache
-            doc = createNewDoc(serverID, null);
-            addDocToCache(serverID, doc);
+            doc = createNewDoc(serverID);
+            putDocInCache(serverID, doc);
             return doc;
         } else {
             throw new DocumentUnavailableException("Database unreachable and server not in cache.");
@@ -129,31 +131,37 @@ public class Database implements Serializable {
     }
     private static Document checkDatabase(long userID) {
         Document document = mongoOK ? mongoServerCollection.find(eq("_id", userID)).first() : null;
-        if (document.getInteger("documentVersion") != currentDocumentVersion) {
-            document = createNewDoc(document.getLong("_id"), document);
+        if (document != null && document.getInteger("documentVersion", -1) != currentDocumentVersion) {
+            document = updateDocument(document.getLong("_id"), document);
         }
         return document;
     }
-    @SuppressWarnings("unchecked")
-    private static Document createNewDoc(long serverID, Document oldDoc) {
-        oldDoc = oldDoc != null ? oldDoc : new Document();
-        return new Document()
-            .append("_id", serverID)
-            .append("documentVersion", currentDocumentVersion)
-            .append("lastCommand", Instant.now().getEpochSecond()/60)
-            .append("muteRoleID", (Long) oldDoc.getOrDefault("muteRoleID", null))
-            .append("modLogEnabled", oldDoc.getBoolean("modLogEnabled", false)) // mod log stuff
-            .append("logChannelID", (Long) oldDoc.getOrDefault("logChannelID", null))
-            .append("logBans", oldDoc.getBoolean("logBans", false))
-            .append("logMutes", oldDoc.getBoolean("logMutes", false))
-            .append("logKicks", oldDoc.getBoolean("logKicks", false))
-            .append("joinMessageEnabled", oldDoc.getOrDefault("joinMessageEnabled", false))
-            .append("joinMessageChannelID", oldDoc.getOrDefault("joinMessageChannelID", null))
-            .append("joinMessage", (String) oldDoc.getOrDefault("joinMessage", null)) // cosmetics
-            .append("joinRoleIDs", oldDoc.getList("joinRoleIDs", long.class, Collections.EMPTY_LIST));
+    private static Document createNewDoc(long serverID) {
+        return updateDocument(serverID, null);
     }
-    private static void addDocToCache(long userID, Document document) {
-        serverCache.put(userID, document);
+    public static void putDocInCache(long serverID, Document document) {
+        serverCache.put(serverID, document);
+        System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).outputMode(JsonMode.EXTENDED).build()));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Document updateDocument(long serverID, Document updates) {
+        System.out.println("update ran");
+        updates = updates != null ? updates : new Document();
+        return new Document()
+            .append("_id", (Long) serverID)
+            .append("documentVersion", (int) currentDocumentVersion)
+            .append("lastCommand", (Long) Instant.now().getEpochSecond()/60)
+            .append("muteRoleID", (Long) updates.getOrDefault("muteRoleID", null))
+            .append("modLogEnabled", (boolean) updates.getBoolean("modLogEnabled", false)) // mod log stuff
+            .append("logChannelID", (Long) updates.getOrDefault("logChannelID", null))
+            .append("logBans", (boolean) updates.getBoolean("logBans", false))
+            .append("logMutes", (boolean) updates.getBoolean("logMutes", false))
+            .append("logKicks", (boolean) updates.getBoolean("logKicks", false))
+            .append("joinMessageEnabled", (boolean) updates.getOrDefault("joinMessageEnabled", false)) // cosmetics
+            .append("joinMessageChannelID", (Long) updates.getOrDefault("joinMessageChannelID", null))
+            .append("joinMessage", (String) updates.getOrDefault("joinMessage", null))
+            .append("joinRoleIDs", (List<Long>) updates.getList("joinRoleIDs", long.class, Collections.EMPTY_LIST));
     }
 
     private static transient final ReplaceOptions replaceOpts = new ReplaceOptions().upsert(true);
@@ -197,7 +205,7 @@ public class Database implements Serializable {
             super(message);
         }
 
-        public static void sendStandardResponse(SlashCommandInteraction interaction) {
+        public static void sendStandardResponse(InteractionBase interaction) {
             interaction.createImmediateResponder().setContent("Database is currently unreachable and server is not cached.").respond();
         }
     }

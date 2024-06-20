@@ -2,7 +2,6 @@ package ai.Commands;
 
 import java.awt.Color;
 
-import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionState;
 import org.javacord.api.entity.permission.PermissionType;
@@ -12,13 +11,19 @@ import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 
+import ai.Database.DocumentUnavailableException;
 import ai.ServerSettings;
 
 
 public class Lockdown  {
 
     public static void handleCommand(SlashCommandInteraction interaction, ServerSettings settings) {
-        interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), settings.getLogChannelID())).respond().join();
+        try {
+            interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), settings.getLogChannelID())).respond().join();
+        } catch (DocumentUnavailableException e) {
+            e.printStackTrace();
+            DocumentUnavailableException.sendStandardResponse(interaction);
+        }
     }
 
     public static SlashCommandBuilder createCommand() {
