@@ -1,28 +1,28 @@
 package ai;
 
 public class Constants {
-    public enum CustomID {
-        SETTINGS_MODAL,
-        SETTINGS_JSON,
-        JOIN_MESSAGE
+    public static class CustomID {
+        public static final String SETTINGS_MODAL = "SETTINGS_MODAL";
+        public static final String SETTINGS_JSON = "SETTINGS_JSON";
+        public static final String JOIN_MESSAGE = "JOIN_MESSAGE";
     }
 
     public static class DatabaseKey {
-        final static String id = "_id";
-        final static String documentVersion = "documentVersion";
-        final static String lastCommand = "lastCommand";
-        final static String muteRoleID = "muteRoleID";
-        final static String modLogEnabled = "modLogEnabled";
-        final static String logChannelID = "logChannelID";
-        final static String logBans = "logBans";
-        final static String logMutes = "logMutes";
-        final static String logKicks = "logKicks";
-        final static String joinMessageEnabled = "joinMessageEnabled";
-        final static String joinMessageChannelID = "joinMessageChannelID";
-        final static String joinMessage = "joinMessage";
+        public static final String id = "_id";
+        public static final String documentVersion = "documentVersion";
+        public static final String lastCommand = "lastCommand";
+        public static final String muteRoleID = "muteRoleID";
+        public static final String modLogEnabled = "modLogEnabled";
+        public static final String logChannelID = "logChannelID";
+        public static final String logBans = "logBans";
+        public static final String logMutes = "logMutes";
+        public static final String logKicks = "logKicks";
+        public static final String joinMessageEnabled = "joinMessageEnabled";
+        public static final String joinMessageChannelID = "joinMessageChannelID";
+        public static final String joinMessage = "joinMessage";
         /**
          * List < Long >
          */
-        final static String joinRoleIDs = "joinRoleIDs";
+        public static final String joinRoleIDs = "joinRoleIDs";
     }
 }

@@ -16,8 +16,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.xml.crypto.Data;
-
 import static com.mongodb.client.model.Filters.eq;
 import org.bson.Document;
 import org.javacord.api.interaction.InteractionBase;

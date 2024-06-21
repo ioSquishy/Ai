@@ -1,10 +1,9 @@
 package ai.Commands;
 
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.component.ActionRow;
 import org.javacord.api.entity.message.component.HighLevelComponent;
 import org.javacord.api.entity.message.component.TextInput;
@@ -13,7 +12,6 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.interaction.ModalInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
-import org.javacord.api.interaction.callback.InteractionFollowupMessageBuilder;
 import org.javacord.api.interaction.callback.InteractionImmediateResponseBuilder;
 
 import ai.Database.DocumentUnavailableException;
@@ -41,7 +39,7 @@ public class Settings {
         actionRows.add(ActionRow.of(
             TextInput.create(
             TextInputStyle.PARAGRAPH, 
-            CustomID.SETTINGS_JSON.name(), 
+            Constants.CustomID.SETTINGS_JSON, 
             "Server Settings", 
             "Submitting an empty text field will reset settings to defaults.", 
             settings.getSettingsJSON(), 
@@ -51,7 +49,7 @@ public class Settings {
         actionRows.add(ActionRow.of(
             TextInput.create(
                 TextInputStyle.PARAGRAPH, 
-                CustomID.JOIN_MESSAGE.name(), 
+                CustomID.JOIN_MESSAGE, 
                 "Join Message", 
                 "", 
                 settings.getJoinMessage(), 
@@ -62,8 +60,8 @@ public class Settings {
     }
 
     public static void handleSettingsModalSubmit(ModalInteraction interaction, ServerSettings settings) {
-        String settingsJson = interaction.getTextInputValueByCustomId(CustomID.SETTINGS_JSON.name()).get();
-        String joinMsg = interaction.getTextInputValueByCustomId(CustomID.JOIN_MESSAGE.name()).get();
+        String settingsJson = interaction.getTextInputValueByCustomId(CustomID.SETTINGS_JSON).get();
+        String joinMsg = interaction.getTextInputValueByCustomId(CustomID.JOIN_MESSAGE).get();
         InteractionImmediateResponseBuilder responseMessage = interaction.createImmediateResponder();
         // set join message and update settings
         try {

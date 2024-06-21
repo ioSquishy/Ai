@@ -29,7 +29,6 @@ public class App implements Serializable {
 
     public static transient final long startEpoch = Instant.now().getEpochSecond();
     public static transient final String version = "2";
-    @SuppressWarnings("incomplete-switch")
     public static void main(String[] args) {
         System.out.println("Ai is online!");
         Database.initMongoDB();
@@ -65,7 +64,7 @@ public class App implements Serializable {
                 case "unban" : Unban.handleCommand(interaction); break;
                 case "settings" :
                     try {
-                        interaction.respondWithModal(CustomID.SETTINGS_MODAL.name(), "Settings", Settings.createSettingsModalComponents(settings));
+                        interaction.respondWithModal(CustomID.SETTINGS_MODAL, "Settings", Settings.createSettingsModalComponents(settings));
                     } catch (DocumentUnavailableException e) {
                         e.printStackTrace();
                     }
@@ -77,8 +76,8 @@ public class App implements Serializable {
             ModalInteraction interaction = event.getModalInteraction();
             ServerSettings serverSettings = new ServerSettings(interaction.getServer().get().getId());
             
-            switch (CustomID.valueOf(interaction.getCustomId())) {
-                case SETTINGS_MODAL :
+            switch (interaction.getCustomId()) {
+                case CustomID.SETTINGS_MODAL :
                     Settings.handleSettingsModalSubmit(interaction, serverSettings);
                     break;
             }

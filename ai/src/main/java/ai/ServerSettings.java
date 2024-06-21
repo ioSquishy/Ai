@@ -1,6 +1,5 @@
 package ai;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.bson.Document;
@@ -68,7 +67,6 @@ public class ServerSettings {
         Database.putDocInCache(serverId, updatedSettings);
     }
 
-    @SuppressWarnings("unchecked")
     public List<Long> getJoinRoleIDs() throws DocumentUnavailableException {
         return Database.getLongList(Database.getServerDoc(serverId), DatabaseKey.joinRoleIDs);
     }
