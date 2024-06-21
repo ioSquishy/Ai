@@ -16,10 +16,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.crypto.Data;
+
 import static com.mongodb.client.model.Filters.eq;
 import org.bson.Document;
-import org.bson.json.JsonMode;
-import org.bson.json.JsonWriterSettings;
 import org.javacord.api.interaction.InteractionBase;
 
 import com.mongodb.client.MongoClient;
@@ -29,6 +29,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
+
+import ai.Constants.DatabaseKey;
 
 public class Database implements Serializable {
     private static transient final String connectionString = "mongodb+srv://squishydb:" + Dotenv.load().get("MONGO_PASS") + "@sandbox.ujgwpn6.mongodb.net/?retryWrites=true&w=majority";
@@ -130,38 +132,67 @@ public class Database implements Serializable {
         return serverCache.get(userID);
     }
     private static Document checkDatabase(long userID) {
-        Document document = mongoOK ? mongoServerCollection.find(eq("_id", userID)).first() : null;
+        Document document = mongoOK ? mongoServerCollection.find(eq(DatabaseKey.id, userID)).first() : null;
         if (document != null && document.getInteger("documentVersion", -1) != currentDocumentVersion) {
-            document = updateDocument(document.getLong("_id"), document);
+            document = updateDocument(document.getLong(DatabaseKey.id), document, new Document());
         }
         return document;
     }
     private static Document createNewDoc(long serverID) {
-        return updateDocument(serverID, null);
+        return updateDocument(serverID, null, null);
     }
     public static void putDocInCache(long serverID, Document document) {
         serverCache.put(serverID, document);
-        System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).outputMode(JsonMode.EXTENDED).build()));
     }
 
+    
     @SuppressWarnings("unchecked")
-    public static Document updateDocument(long serverID, Document updates) {
+    public static Document updateDocument(long serverID, Document original, Document updates) throws ClassCastException {
         System.out.println("update ran");
+        original = original != null ? original : new Document();
         updates = updates != null ? updates : new Document();
         return new Document()
-            .append("_id", (Long) serverID)
-            .append("documentVersion", (int) currentDocumentVersion)
-            .append("lastCommand", (Long) Instant.now().getEpochSecond()/60)
-            .append("muteRoleID", (Long) updates.getOrDefault("muteRoleID", null))
-            .append("modLogEnabled", (boolean) updates.getBoolean("modLogEnabled", false)) // mod log stuff
-            .append("logChannelID", (Long) updates.getOrDefault("logChannelID", null))
-            .append("logBans", (boolean) updates.getBoolean("logBans", false))
-            .append("logMutes", (boolean) updates.getBoolean("logMutes", false))
-            .append("logKicks", (boolean) updates.getBoolean("logKicks", false))
-            .append("joinMessageEnabled", (boolean) updates.getOrDefault("joinMessageEnabled", false)) // cosmetics
-            .append("joinMessageChannelID", (Long) updates.getOrDefault("joinMessageChannelID", null))
-            .append("joinMessage", (String) updates.getOrDefault("joinMessage", null))
-            .append("joinRoleIDs", (List<Long>) updates.getList("joinRoleIDs", long.class, Collections.EMPTY_LIST));
+            .append(DatabaseKey.id, (Long) serverID)
+            .append(DatabaseKey.documentVersion, (int) currentDocumentVersion)
+            .append(DatabaseKey.lastCommand, (Long) Instant.now().getEpochSecond()/60)
+            .append(DatabaseKey.muteRoleID, (Long) updates.getOrDefault(DatabaseKey.muteRoleID, original.getOrDefault(DatabaseKey.muteRoleID, null)))
+            .append(DatabaseKey.modLogEnabled, (boolean) updates.getBoolean(DatabaseKey.modLogEnabled, original.getBoolean(DatabaseKey.modLogEnabled, false))) // mod log stuff
+            .append(DatabaseKey.logChannelID, (Long) updates.getOrDefault(DatabaseKey.logChannelID, original.getOrDefault(DatabaseKey.logChannelID, null)))
+            .append(DatabaseKey.logBans, (boolean) updates.getBoolean(DatabaseKey.logBans, original.getBoolean(DatabaseKey.logBans, false)))
+            .append(DatabaseKey.logMutes, (boolean) updates.getBoolean(DatabaseKey.logMutes, original.getBoolean(DatabaseKey.logMutes, false)))
+            .append(DatabaseKey.logKicks, (boolean) updates.getBoolean(DatabaseKey.logKicks, original.getBoolean(DatabaseKey.logKicks, false)))
+            .append(DatabaseKey.joinMessageEnabled, (boolean) updates.getBoolean(DatabaseKey.joinMessageEnabled, original.getBoolean(DatabaseKey.joinMessageEnabled, false))) // cosmetics
+            .append(DatabaseKey.joinMessageChannelID, (Long) updates.getOrDefault(DatabaseKey.joinMessageChannelID, original.getOrDefault(DatabaseKey.joinMessageChannelID, null)))
+            .append(DatabaseKey.joinMessage, (String) updates.getOrDefault(DatabaseKey.joinMessage, original.getOrDefault(DatabaseKey.joinMessage, null)))
+            .append(DatabaseKey.joinRoleIDs, 
+                (List<Long>) getListOrDefault(
+                    getLongList(updates, DatabaseKey.joinRoleIDs), 
+                    getListOrDefault(
+                        getLongList(updates, DatabaseKey.joinRoleIDs), Collections.EMPTY_LIST)));
+            // .append(DatabaseKey.joinRoleIDs, (List<Long>) updates.getList(DatabaseKey.joinRoleIDs, long.class, original.getList(DatabaseKey.joinRoleIDs, long.class, Collections.EMPTY_LIST)));
+    }
+
+    public static List<Long> getLongList(Document document, String key) {
+        return getLongListFromObjectList(document.getList(key, Object.class));
+    }
+
+    private static List<?> getListOrDefault(List<?> list, List<?> orDefault) {
+        return list != null ? list : orDefault;
+    }
+    private static List<Long> getLongListFromObjectList(List<Object> objectList) throws ClassCastException {
+        List<Long> longList = objectList.stream().mapToLong(obj -> {
+            if (obj instanceof Number) {
+                return ((Number)obj).longValue();
+            } else {
+                return -1;
+            }
+        }).boxed().toList();
+        
+        if (longList.stream().noneMatch(num -> num == -1)) {
+            return longList;
+        } else {
+            throw new ClassCastException("Could not cast List<Object> to List<Long>");
+        }
     }
 
     private static transient final ReplaceOptions replaceOpts = new ReplaceOptions().upsert(true);
@@ -171,8 +202,8 @@ public class Database implements Serializable {
         ArrayList<ReplaceOneModel<Document>> writeReqs = new ArrayList<ReplaceOneModel<Document>>(cacheCopy.size());
         long currentMinute = Instant.now().getEpochSecond()/60;
         for (Map.Entry<Long, Document> entry : cacheCopy.entrySet()) {
-            writeReqs.add(new ReplaceOneModel<Document>(eq("_id", entry.getKey()), entry.getValue(), replaceOpts));
-            if (currentMinute - entry.getValue().get("lastCommand", Instant.now().getEpochSecond()/60) > 30) { //removes doc from cache if they havent used a cmd in 30 mins
+            writeReqs.add(new ReplaceOneModel<Document>(eq(DatabaseKey.id, entry.getKey()), entry.getValue(), replaceOpts));
+            if (currentMinute - entry.getValue().get(DatabaseKey.lastCommand, Instant.now().getEpochSecond()/60) > 30) { //removes doc from cache if they havent used a cmd in 30 mins
                 serverCache.remove(entry.getKey());
             }
         }
@@ -189,7 +220,7 @@ public class Database implements Serializable {
 
     public static void removeServer(long serverID) {
         serverCache.remove(serverID);
-        mongoServerCollection.deleteOne(eq("_id", serverID));
+        mongoServerCollection.deleteOne(eq(DatabaseKey.id, serverID));
     }
 
     public static void clearCache() {
@@ -205,8 +236,12 @@ public class Database implements Serializable {
             super(message);
         }
 
+        public static String getStandardResponseString() {
+            return "Database is currently unreachable and server is not cached.";
+        }
+
         public static void sendStandardResponse(InteractionBase interaction) {
-            interaction.createImmediateResponder().setContent("Database is currently unreachable and server is not cached.").respond();
+            interaction.createImmediateResponder().setContent(getStandardResponseString()).respond();
         }
     }
 }

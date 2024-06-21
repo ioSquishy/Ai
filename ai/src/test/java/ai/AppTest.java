@@ -1,17 +1,31 @@
 package ai;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.bson.Document;
+
+import ai.Constants.DatabaseKey;
 
 public class AppTest {
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) {
-        Integer a = -3;
-        int b = 3;
-        System.out.println(a == b);
+        String json = "{\"joinRoleIDs\": [846451583550095371]}";
+        Document parsedList = Document.parse(json);
+
+        // Document document = new Document()
+        //     .append("joinRoleIDs", parsedList.getList("joinRoleIDs", Object.class, Collections.EMPTY_LIST));
+
+        List<Object> objList = parsedList.getList("joinRoleIDs", Object.class, Collections.EMPTY_LIST);
+        List<Long> longList = objList.stream().mapToLong(obj -> {
+            if (obj instanceof Number) {
+                return ((Number)obj).longValue();
+            } else {
+                return -1;
+            }
+        }).distinct().boxed().toList();
+
+        System.out.println(longList);
     }
 }

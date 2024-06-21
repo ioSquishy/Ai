@@ -1,5 +1,6 @@
 package ai;
 
+import ai.Constants.CustomID;
 import ai.Database.DocumentUnavailableException;
 import ai.Commands.*;
 import ai.Utility.*;
@@ -64,7 +65,7 @@ public class App implements Serializable {
                 case "unban" : Unban.handleCommand(interaction); break;
                 case "settings" :
                     try {
-                        interaction.respondWithModal(CustomIDs.SETTINGS_MODAL.name(), "Settings", Settings.createSettingsModalComponents(settings));
+                        interaction.respondWithModal(CustomID.SETTINGS_MODAL.name(), "Settings", Settings.createSettingsModalComponents(settings));
                     } catch (DocumentUnavailableException e) {
                         e.printStackTrace();
                     }
@@ -76,7 +77,7 @@ public class App implements Serializable {
             ModalInteraction interaction = event.getModalInteraction();
             ServerSettings serverSettings = new ServerSettings(interaction.getServer().get().getId());
             
-            switch (CustomIDs.valueOf(interaction.getCustomId())) {
+            switch (CustomID.valueOf(interaction.getCustomId())) {
                 case SETTINGS_MODAL :
                     Settings.handleSettingsModalSubmit(interaction, serverSettings);
                     break;
