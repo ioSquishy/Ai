@@ -19,10 +19,14 @@ public class Lockdown  {
 
     public static void handleCommand(SlashCommandInteraction interaction, ServerSettings settings) {
         try {
-            interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), settings.getLogChannelID())).respond().join();
+            Long logChannelID = settings.isModLogEnabled() ? settings.getLogChannelID().orElse(null) : null;
+            interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), logChannelID)).respond().join();
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
-            DocumentUnavailableException.sendStandardResponse(interaction);
+            interaction.createImmediateResponder().setContent(
+                    "Database unreachable so unable to log event in ModLog (if applicable). However, command still ran." + 
+                    runSlashCmd(interaction.getServer().get(), interaction.getUser(), null)
+                ).respond().join();
         }
     }
 
@@ -33,7 +37,7 @@ public class Lockdown  {
             .setDefaultDisabled();
     }
 
-    private static String runSlashCmd(Server server, User author, long logChannelId) {
+    private static String runSlashCmd(Server server, User author, Long logChannelId) {
         Role everyoneRole = server.getEveryoneRole();
         PermissionState state = everyoneRole.getPermissions().getState(PermissionType.SEND_MESSAGES) == PermissionState.ALLOWED ? PermissionState.DENIED : PermissionState.ALLOWED;
             everyoneRole.updatePermissions(everyoneRole.getPermissions().toBuilder()
@@ -44,24 +48,34 @@ public class Lockdown  {
                 .setState(PermissionType.CHANGE_NICKNAME, state)
                 .build()).join();
         boolean initialized = state == PermissionState.DENIED;
-        if (initialized) {
-            server.getChannelById(logChannelId).get().asServerTextChannel().get().sendMessage(
-            new EmbedBuilder()
-                .setTitle("Lockdown Enabled")
-                .setDescription("Moderator: " + author.getMentionTag())
-                .setColor(Color.RED)
-                .setTimestampToNow()
-            ).join();
+        if (logChannelId != null) {
+            if (initialized) {
+                server.getTextChannelById(logChannelId).ifPresent(channel -> 
+                    channel.sendMessage(getLockdownEnabledEmbed(author)));
+            } else {
+                server.getTextChannelById(logChannelId).ifPresent(channel -> 
+                    channel.sendMessage(getLockdownDisabledEmbed(author)));
+            }
         } else {
-            server.getChannelById(logChannelId).get().asServerTextChannel().get().sendMessage(
-            new EmbedBuilder()
-                .setTitle("Lockdown Disabled")
-                .setDescription("Moderator: " + author.getMentionTag())
-                .setColor(Color.GREEN)
-                .setTimestampToNow()
-            ).join();
+
         }
         return initialized ? "https://imgur.com/hIaMyPd.gif" : "https://imgur.com/O99TyXi.gif";
+    }
+
+    private static EmbedBuilder getLockdownEnabledEmbed(User moderator) {
+        return new EmbedBuilder()
+            .setTitle("Lockdown Enabled")
+            .setDescription("Moderator: " + moderator.getMentionTag())
+            .setColor(Color.RED)
+            .setTimestampToNow();
+    }
+
+    private static EmbedBuilder getLockdownDisabledEmbed(User moderator) {
+        return new EmbedBuilder()
+            .setTitle("Lockdown Disabled")
+            .setDescription("Moderator: " + moderator.getMentionTag())
+            .setColor(Color.GREEN)
+            .setTimestampToNow();
     }
     
 }

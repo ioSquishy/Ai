@@ -10,14 +10,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class RoleDelay {
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final long roleId;
     private final User user;
     private final Server server;
     private final long userId;
-    private final long logChannelID;
+    private final Long logChannelID;
 
-    public RoleDelay(long roleId, User user, Server server, long logId) {
+    public RoleDelay(long roleId, User user, Server server, Long logId) {
         this.roleId = roleId;
         this.user = user;
         this.server = server;
@@ -39,14 +39,16 @@ public class RoleDelay {
         Runnable runnable = new Runnable() {
             public void run() {
                 user.removeRole(server.getRoleById(roleId).get());
-                server.getTextChannelById(logChannelID).get().sendMessage(new EmbedBuilder()
-                    .setTitle("Unmute")
-                    .setDescription("**User:** " + user.getName() + " " + user.getMentionTag() + 
-                        "\n**Moderator:** <@959987022582403193>" +
-                        "\n**Reason:** Mute duration is over.")
-                    .setColor(Color.GREEN)
-                    .setFooter(user.getIdAsString())
-                    .setTimestampToNow());
+                server.getTextChannelById(logChannelID).ifPresent(channel -> {
+                    channel.sendMessage(new EmbedBuilder()
+                        .setTitle("Unmute")
+                        .setDescription("**User:** " + user.getName() + " " + user.getMentionTag() + 
+                            "\n**Moderator:** <@959987022582403193>" +
+                            "\n**Reason:** Mute duration is over.")
+                        .setColor(Color.GREEN)
+                        .setFooter(user.getIdAsString())
+                        .setTimestampToNow());
+                });
             }
         };
         scheduler.schedule(runnable, delay, unit);
@@ -55,9 +57,4 @@ public class RoleDelay {
     public long getUserId() {
         return userId;
     }
-
-    public void shutdown() {
-        scheduler.shutdownNow();
-    }
-
 }

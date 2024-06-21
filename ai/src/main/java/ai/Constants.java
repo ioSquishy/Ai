@@ -5,6 +5,8 @@ public class Constants {
         public static final String SETTINGS_MODAL = "SETTINGS_MODAL";
         public static final String SETTINGS_JSON = "SETTINGS_JSON";
         public static final String JOIN_MESSAGE = "JOIN_MESSAGE";
+
+        public static final String MANUAL_MUTE = "MANUAL_MUTE";
     }
 
     public static class DatabaseKey {
@@ -24,5 +26,11 @@ public class Constants {
          * List < Long >
          */
         public static final String joinRoleIDs = "joinRoleIDs";
+    }
+
+    public static class MuteJsonKeys {
+        public static final String component = "component";
+        public static final String mutedUserID = "mutedUserID";
+        public static final String durationSeconds = "durationSeconds";
     }
 }

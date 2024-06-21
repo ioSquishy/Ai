@@ -5,6 +5,7 @@ import java.util.List;
 import org.bson.Document;
 import org.bson.json.JsonWriterSettings;
 import org.javacord.api.interaction.InteractionBase;
+import java.util.Optional;
 
 import ai.Constants.DatabaseKey;
 import ai.Database.DocumentUnavailableException;
@@ -74,8 +75,8 @@ public class ServerSettings {
     public void setMuteRoleID(Long id) throws DocumentUnavailableException {
         Database.getServerDoc(serverId).put(DatabaseKey.muteRoleID, id);
     }
-    public Long getMuteRoleID() throws DocumentUnavailableException {
-        return Database.getServerDoc(serverId).getLong(DatabaseKey.muteRoleID);
+    public Optional<Long> getMuteRoleID() throws DocumentUnavailableException {
+        return Optional.ofNullable(Database.getServerDoc(serverId).getLong(DatabaseKey.muteRoleID));
     }
 
     public boolean isJoinMessageEnabled() throws DocumentUnavailableException {
@@ -102,8 +103,8 @@ public class ServerSettings {
         Database.getServerDoc(serverId).put(DatabaseKey.logChannelID, id);
     }
 
-    public Long getLogChannelID() throws DocumentUnavailableException {
-        return Database.getServerDoc(serverId).getLong(DatabaseKey.logChannelID);
+    public Optional<Long> getLogChannelID() throws DocumentUnavailableException {
+        return Optional.ofNullable(Database.getServerDoc(serverId).getLong(DatabaseKey.logChannelID));
     }
 
     public boolean isModLogEnabled() throws DocumentUnavailableException {

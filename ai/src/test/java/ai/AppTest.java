@@ -1,12 +1,9 @@
 package ai;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import org.bson.Document;
-
-import ai.Constants.DatabaseKey;
 
 public class AppTest {
     @SuppressWarnings("unchecked")

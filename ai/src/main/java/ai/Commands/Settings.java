@@ -12,6 +12,7 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.interaction.ModalInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
+import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.callback.InteractionImmediateResponseBuilder;
 
 import ai.Database.DocumentUnavailableException;
@@ -30,10 +31,19 @@ public class Settings {
             .setEnabledInDms(false);
     }
 
+    public static void handleSettingsCommand(SlashCommandInteraction interaction, ServerSettings settings) {
+        try {
+            interaction.respondWithModal(CustomID.SETTINGS_MODAL, "Settings", createSettingsModalComponents(settings));
+        } catch (DocumentUnavailableException e) {
+            e.printStackTrace();
+            DocumentUnavailableException.sendStandardResponse(interaction);
+        }
+    }
+
     // will add selectmenus to settings modal once discord and javacord adds it
     // private static final SelectMenuOption trueOption = new SelectMenuOptionBuilder().setValue("true").build();
     // private static final SelectMenuOption falseOption = new SelectMenuOptionBuilder().setValue("false").build();
-    public static List<HighLevelComponent> createSettingsModalComponents(ServerSettings settings) throws DocumentUnavailableException {
+    private static List<HighLevelComponent> createSettingsModalComponents(ServerSettings settings) throws DocumentUnavailableException {
         List<HighLevelComponent> actionRows = new ArrayList<HighLevelComponent>();
 
         actionRows.add(ActionRow.of(
