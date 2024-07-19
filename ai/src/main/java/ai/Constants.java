@@ -28,8 +28,12 @@ public class Constants {
         public static final String joinRoleIDs = "joinRoleIDs";
     }
 
+    public static class GlobalJsonKeys {
+        public static final String customID = "customID";
+        public static final String moderatorID = "moderatorID";
+    }
+
     public static class MuteJsonKeys {
-        public static final String component = "component";
         public static final String mutedUserID = "mutedUserID";
         public static final String durationSeconds = "durationSeconds";
     }

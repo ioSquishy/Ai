@@ -10,7 +10,10 @@ import org.javacord.api.DiscordApiBuilder;
 
 import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
+import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.ModalInteraction;
+import org.javacord.api.interaction.SelectMenuInteraction;
+import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandInteraction;
 
 import java.io.Serializable;
@@ -41,7 +44,7 @@ public class App implements Serializable {
         Lockdown.createCommand().createGlobal(api).join();
         Settings.createSettingsCommand().createGlobal(api).join();
         
-        // handle slash commands
+        // slash command listener
         api.addSlashCommandCreateListener(event -> {
             SlashCommandInteraction interaction = event.getSlashCommandInteraction();
             ServerSettings settings = new ServerSettings(interaction.getServer().orElseThrow().getId());
@@ -56,6 +59,7 @@ public class App implements Serializable {
             }
         });
 
+        // modal submission listener
         api.addModalSubmitListener(event -> {
             ModalInteraction interaction = event.getModalInteraction();
             ServerSettings serverSettings = new ServerSettings(interaction.getServer().get().getId());
@@ -67,6 +71,17 @@ public class App implements Serializable {
             }
         });
 
+        // select menu listener
+        api.addSelectMenuChooseListener(event -> {
+            SelectMenuInteraction interaction = event.getSelectMenuInteraction();
+            
+            switch (CustomCoder.getCustomID(interaction.getCustomId())) {
+                case CustomID.MANUAL_MUTE : Mute.handleManualMute(interaction); break;
+                    
+            }
+        });
+
+        // join listener
         api.addServerMemberJoinListener(event -> {
             ServerSettings settings = new ServerSettings(event.getServer().getId());
             JoinHandler joinHandler = new JoinHandler(event, settings);
@@ -79,6 +94,7 @@ public class App implements Serializable {
             }
         });
 
+        // ban listener
         api.addServerMemberBanListener(event -> {
             ServerSettings settings = new ServerSettings(event.getServer().getId());
             try {
@@ -102,9 +118,9 @@ public class App implements Serializable {
                 e.printStackTrace();
                 return;
             }
-            
         });
 
+        // unban listener
         api.addServerMemberUnbanListener(event -> {
             ServerSettings settings = new ServerSettings(event.getServer().getId());
             try {

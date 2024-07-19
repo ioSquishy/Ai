@@ -13,6 +13,7 @@ import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
+import org.javacord.api.interaction.SelectMenuInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.SlashCommandOptionBuilder;
@@ -22,7 +23,9 @@ import ai.App;
 import ai.Database.DocumentUnavailableException;
 import ai.ServerSettings;
 import ai.Constants.CustomID;
+import ai.Constants.GlobalJsonKeys;
 import ai.Constants.MuteJsonKeys;
+import ai.Utility.CustomCoder;
 import ai.Utility.LogEmbeds;
 import ai.Utility.ReadableTime;
 import ai.Utility.RoleDelay;
@@ -114,17 +117,20 @@ public class Mute {
             // save mute role id and log channel id
             muteRoleID = settings.getMuteRoleID().get();
             logChannelID = settings.isLogMuteEnabled() ? settings.getLogChannelID().orElse(null) : null;
+            
+            // throw new DocumentUnavailableException("fake exception");
         } catch (DocumentUnavailableException e) { 
             e.printStackTrace();
             String unavailableMsg = "Currently unable to get mute role because my database is temporarily down.\n" +
                 "Please select a one-time mute role to use to continue carrying out mute command.";
             interaction.createImmediateResponder()
                 .setContent(unavailableMsg)
-                .addComponents(getSelectRoleMenu(interaction.getArgumentUserValueByName("User").get().getId(), duration))
+                .addComponents(getSelectRoleMenu(interaction.getUser().getId(), interaction.getArgumentUserValueByName("User").get().getId(), duration))
                 .setFlags(MessageFlag.EPHEMERAL).respond();
             return;
         }
 
+        
         final User mutedUser = interaction.getArgumentUserValueByName("User").get();
         final Server server = interaction.getServer().get();
         final Duration secondDuration = Duration.ofSeconds(duration);
@@ -161,8 +167,21 @@ public class Mute {
                 });
             }
         } catch (DocumentUnavailableException e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
+    }
+
+    public static void handleManualMute(SelectMenuInteraction interaction) {
+        ManualMuteJSON muteData = ManualMuteJSON.decode(interaction.getCustomId());
+
+        User invoker = interaction.getUser();
+        if (invoker.getId() != muteData.moderatorID) {
+            interaction.createImmediateResponder().setContent("Only the original moderator can carry out this action.").respond();
+            return;
+        }
+
+        //TODO mute user using muteData. possibly make a shared method between manual mute and normal mute
+        // will have to update RoleDelay to only do the logchannel thing if it needs though
     }
 
     /**
@@ -195,24 +214,27 @@ public class Mute {
         return true;
     }
 
-    private static ActionRow getSelectRoleMenu(long mutedUserID, long muteDuration) {
-        String customIdJson = new ManualMuteJSON(mutedUserID, muteDuration).encode();
+    private static ActionRow getSelectRoleMenu(long moderatorID, long mutedUserID, long muteDuration) {
+        String customIdJson = new ManualMuteJSON(moderatorID, mutedUserID, muteDuration).encode();
         return ActionRow.of(new SelectMenuBuilder(ComponentType.SELECT_MENU_ROLE, customIdJson).build());
     }
 
-    private static class ManualMuteJSON {
-        private static final String component = CustomID.MANUAL_MUTE;
+    private static class ManualMuteJSON extends CustomCoder {
+        private static final String customID = CustomID.MANUAL_MUTE;
+        public long moderatorID;
         public long mutedUserID;
         public long durationSeconds;
 
-        public ManualMuteJSON(long mutedUserID, long durationSeconds) {
+        public ManualMuteJSON(long moderaterID, long mutedUserID, long durationSeconds) {
+            this.moderatorID = moderaterID;
             this.mutedUserID = mutedUserID;
             this.durationSeconds = durationSeconds;
         }
 
         public String encode() {
             return new Document()
-                .append(MuteJsonKeys.component, component)
+                .append(GlobalJsonKeys.customID, customID)
+                .append(GlobalJsonKeys.moderatorID, moderatorID)
                 .append(MuteJsonKeys.mutedUserID, mutedUserID)
                 .append(MuteJsonKeys.durationSeconds, durationSeconds)
                     .toJson();
@@ -221,6 +243,7 @@ public class Mute {
         public static ManualMuteJSON decode(String json) {
             Document parsedJson = Document.parse(json);
             return new ManualMuteJSON(
+                parsedJson.getLong(GlobalJsonKeys.moderatorID),
                 parsedJson.getLong(MuteJsonKeys.mutedUserID), 
                 parsedJson.getLong(MuteJsonKeys.durationSeconds));
         }
