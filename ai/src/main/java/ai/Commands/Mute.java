@@ -2,7 +2,9 @@ package ai.Commands;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.bson.Document;
 import org.javacord.api.entity.message.MessageFlag;
@@ -13,6 +15,7 @@ import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
+import org.javacord.api.interaction.InteractionBase;
 import org.javacord.api.interaction.SelectMenuInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
@@ -123,9 +126,11 @@ public class Mute {
             e.printStackTrace();
             String unavailableMsg = "Currently unable to get mute role because my database is temporarily down.\n" +
                 "Please select a one-time mute role to use to continue carrying out mute command.";
+
+            ActionRow selectMenu = getSelectRoleMenu(interaction.getArgumentUserValueByName("User").get().getId(), duration);
             interaction.createImmediateResponder()
                 .setContent(unavailableMsg)
-                .addComponents(getSelectRoleMenu(interaction.getUser().getId(), interaction.getArgumentUserValueByName("User").get().getId(), duration))
+                .addComponents(selectMenu)
                 .setFlags(MessageFlag.EPHEMERAL).respond();
             return;
         }
@@ -133,35 +138,18 @@ public class Mute {
         
         final User mutedUser = interaction.getArgumentUserValueByName("User").get();
         final Server server = interaction.getServer().get();
-        final Duration secondDuration = Duration.ofSeconds(duration);
         final String reason = interaction.getArgumentStringValueByName("Reason").orElse("");
-        final Role muteRole = App.api.getRoleById(muteRoleID).get();
+        final Role muteRole = App.api.getRoleById(muteRoleID).orElseThrow();
         
         // mute user
-        if (duration > 0) {
-            //if duration is less than 28 days, use discord timeout
-            if (Duration.ofSeconds(duration).getSeconds() <= 28*86400) {
-                if (interaction.getArgumentStringValueByName("Reason").isPresent()) {
-                    mutedUser.timeout(server, secondDuration, reason);
-                } else {
-                    mutedUser.timeout(server, secondDuration);
-                }
-            }
-            //also mutes normally anyways with roledelay tempmute method
-            server.addRoleToUser(mutedUser, muteRole).join();
-            new RoleDelay(muteRoleID, mutedUser, server, logChannelID).tempMute(duration, TimeUnit.SECONDS);
-        } else { //use mute role to perm mute
-            server.addRoleToUser(mutedUser, muteRole).join();
-        }
+        muteUser(mutedUser, muteRole, duration, server, logChannelID, reason);
 
         // respond
-        String response = mutedUser.getMentionTag() + " was muted";
-        if (duration > 0) response += " for" + new ReadableTime().compute(duration);
-        interaction.createImmediateResponder().setContent(response + ".").setFlags(MessageFlag.EPHEMERAL).respond().join();
+        sendMuteResponse(interaction, mutedUser, duration);
 
         //send log message
         try {
-            if (settings.isModLogEnabled() && settings.isLogMuteEnabled()) {
+            if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
                 App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
                     channel.sendMessage(new LogEmbeds().mute(mutedUser, interaction.getUser(), new ReadableTime().compute(duration), reason));
                 });
@@ -169,19 +157,64 @@ public class Mute {
         } catch (DocumentUnavailableException e) {
             // e.printStackTrace();
         }
+        
     }
 
     public static void handleManualMute(SelectMenuInteraction interaction) {
         ManualMuteJSON muteData = ManualMuteJSON.decode(interaction.getCustomId());
 
-        User invoker = interaction.getUser();
-        if (invoker.getId() != muteData.moderatorID) {
-            interaction.createImmediateResponder().setContent("Only the original moderator can carry out this action.").respond();
+        // ensure person using the command has permissions
+        final User invoker = interaction.getUser();
+        // if (invoker.getId() != muteData.moderatorID) {
+        //     interaction.createImmediateResponder().setContent("Only the original moderator can carry out this action.").respond();
+        //     return;
+        // }
+
+        // try to get muted user
+        User mutedUser = null;
+        try {
+            mutedUser = App.api.getUserById(muteData.mutedUserID).get(3, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+            interaction.createImmediateResponder().setContent("Discord could not find the user you are trying to mute.").respond();
             return;
         }
+        
+        // get mute role
+        final Role muteRole = interaction.getSelectedRoles().get(0);
 
-        //TODO mute user using muteData. possibly make a shared method between manual mute and normal mute
-        // will have to update RoleDelay to only do the logchannel thing if it needs though
+        // get server
+        final Server server = interaction.getServer().get();
+
+        // mute user
+        final long durationSeconds = muteData.durationSeconds;
+        muteUser(mutedUser, muteRole, durationSeconds, server, null, "");
+        sendMuteResponse(interaction, mutedUser, durationSeconds);
+    }
+
+    private static void muteUser(User mutedUser, Role muteRole, long duration, Server server, Long logChannelID, String reason) {
+        final Duration secondDuration = Duration.ofSeconds(duration);
+        if (duration > 0) {
+            //if duration is less than 28 days, use discord timeout
+            if (duration <= 28*86400) {
+                if (!reason.isBlank()) {
+                    mutedUser.timeout(server, secondDuration, reason);
+                } else {
+                    mutedUser.timeout(server, secondDuration);
+                }
+            }
+            //also mutes normally anyways with roledelay tempmute method
+            server.addRoleToUser(mutedUser, muteRole).join();
+            new RoleDelay(muteRole.getId(), mutedUser, server, logChannelID).tempMute(duration, TimeUnit.SECONDS);
+        } else { //use mute role to perm mute
+            server.addRoleToUser(mutedUser, muteRole).join();
+        }
+    }
+
+    private static void sendMuteResponse(InteractionBase interaction, User mutedUser, long duration) {
+        String response = mutedUser.getMentionTag() + " was muted";
+        if (duration > 0) response += " for" + new ReadableTime().compute(duration);
+        interaction.createImmediateResponder().setContent(response + ".").setFlags(MessageFlag.EPHEMERAL).respond();
     }
 
     /**
@@ -214,19 +247,18 @@ public class Mute {
         return true;
     }
 
-    private static ActionRow getSelectRoleMenu(long moderatorID, long mutedUserID, long muteDuration) {
-        String customIdJson = new ManualMuteJSON(moderatorID, mutedUserID, muteDuration).encode();
+    private static ActionRow getSelectRoleMenu(long mutedUserID, long muteDuration) {
+        String customIdJson = new ManualMuteJSON(mutedUserID, muteDuration).encode();
+        System.out.println(customIdJson);
         return ActionRow.of(new SelectMenuBuilder(ComponentType.SELECT_MENU_ROLE, customIdJson).build());
     }
 
     private static class ManualMuteJSON extends CustomCoder {
         private static final String customID = CustomID.MANUAL_MUTE;
-        public long moderatorID;
         public long mutedUserID;
         public long durationSeconds;
 
-        public ManualMuteJSON(long moderaterID, long mutedUserID, long durationSeconds) {
-            this.moderatorID = moderaterID;
+        public ManualMuteJSON(long mutedUserID, long durationSeconds) {
             this.mutedUserID = mutedUserID;
             this.durationSeconds = durationSeconds;
         }
@@ -234,7 +266,6 @@ public class Mute {
         public String encode() {
             return new Document()
                 .append(GlobalJsonKeys.customID, customID)
-                .append(GlobalJsonKeys.moderatorID, moderatorID)
                 .append(MuteJsonKeys.mutedUserID, mutedUserID)
                 .append(MuteJsonKeys.durationSeconds, durationSeconds)
                     .toJson();
@@ -243,9 +274,8 @@ public class Mute {
         public static ManualMuteJSON decode(String json) {
             Document parsedJson = Document.parse(json);
             return new ManualMuteJSON(
-                parsedJson.getLong(GlobalJsonKeys.moderatorID),
-                parsedJson.getLong(MuteJsonKeys.mutedUserID), 
-                parsedJson.getLong(MuteJsonKeys.durationSeconds));
+                (Long) parsedJson.getLong(MuteJsonKeys.mutedUserID), 
+                (Integer) parsedJson.getInteger(MuteJsonKeys.durationSeconds));
         }
     }
 
