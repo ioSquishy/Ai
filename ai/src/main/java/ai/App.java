@@ -133,27 +133,27 @@ public class App implements Serializable {
             }
         });
 
-        // api.addUserChangeTimeoutListener(event -> {
-        //     ServerSettings settings = new ServerSettings(event.getServer().getId());
-        //     try {
-        //         if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && event.getServer().getTextChannelById(settings.getLogChannelID().orElse(-1L)).isPresent()) {
-        //             AuditLogEntry lastTimeout = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_UPDATE).join().getEntries().get(0);
-        //             if (!lastTimeout.getUser().join().getIdAsString().equals(api.getYourself().getIdAsString())) { //if mod is not bot
-        //                 if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
-        //                     try {
-        //                         event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().mute(event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
-        //                     } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
-        //                 } else {
-        //                     try {
-        //                         event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().unmute(event.getUser(), lastTimeout.getUser().get()));
-        //                     } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
-        //                 }
-        //             }
-        //         }
-        //     } catch (DocumentUnavailableException e) {
-        //         e.printStackTrace();
-        //     }
-        // });
+        api.addUserChangeTimeoutListener(event -> {
+            ServerSettings settings = new ServerSettings(event.getServer().getId());
+            try {
+                if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && event.getServer().getTextChannelById(settings.getLogChannelID().orElse(-1L)).isPresent()) {
+                    AuditLogEntry lastTimeout = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_UPDATE).join().getEntries().get(0);
+                    if (!lastTimeout.getUser().join().getIdAsString().equals(api.getYourself().getIdAsString())) { //if mod is not bot
+                        if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
+                            try {
+                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().mute(event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
+                            } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+                        } else {
+                            try {
+                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().unmute(event.getUser(), lastTimeout.getUser().get()));
+                            } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+                        }
+                    }
+                }
+            } catch (DocumentUnavailableException e) {
+                e.printStackTrace();
+            }
+        });
 
         api.addServerMemberLeaveListener(event -> {
             AuditLogEntry lastKick = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_KICK).join().getEntries().get(0);

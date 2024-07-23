@@ -2,6 +2,7 @@
     1a. need to make muteUser() method mute for correct amount of seconds
     1b. possibly add another select menu to choose where to log message if needed
     1c. mute command send an error msg if bot/user do not have permission to mute someone
-2. change Long server settings to Optional<Long>
-3. make mute command respond with error if missing permissions to mute
-4. add a gateway disconnect listener and in that event, pause or save role delays in database or cache
+2. instead of sending mute log message manually, use listeners to do it automatically
+3. change Long server settings to Optional<Long>
+4. make mute command respond with error if missing permissions to mute
+5. add a gateway disconnect listener and in that event, pause or save role delays in database or cache

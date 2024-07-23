@@ -102,10 +102,10 @@ public class Settings {
         return new EmbedBuilder()
             .setTitle("Settings")
             .setDescription(
-                "Mute Role: <@&" + settings.getMuteRoleID() + ">\n" +
+                "Mute Role: <@&" + settings.getMuteRoleID().orElse(null) + ">\n" +
                 "\n" +
                 "ModLog Enabled: " + settings.isModLogEnabled() + "\n" +
-                "ModLog Channel: <#" + settings.getLogChannelID() + ">\n" +
+                "ModLog Channel: <#" + settings.getLogChannelID().orElse(null) + ">\n" +
                 "Log Bans: " + settings.isLogBanEnabled() + "\n" + 
                 "Log Mutes: " + settings.isLogMuteEnabled() + "\n" + 
                 "Log Kicks: " + settings.isLogKicksEnabled() + "\n" +

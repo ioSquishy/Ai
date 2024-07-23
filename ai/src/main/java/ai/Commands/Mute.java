@@ -118,19 +118,22 @@ public class Mute {
                 return;
             }
             // save mute role id and log channel id
-            muteRoleID = settings.getMuteRoleID().get();
+            muteRoleID = settings.getMuteRoleID().orElseThrow();
             logChannelID = settings.isLogMuteEnabled() ? settings.getLogChannelID().orElse(null) : null;
             
             // throw new DocumentUnavailableException("fake exception");
+        } catch (NoSuchElementException e) {
+            // if mute role doesnt exist
+            String errorResponse = "You do not have a mute role set.";
+            interaction.createImmediateResponder().setContent(errorResponse).respond();
+            return;
         } catch (DocumentUnavailableException e) { 
-            e.printStackTrace();
-            String unavailableMsg = "Currently unable to get mute role because my database is temporarily down.\n" +
+            String errorResponse = "Currently unable to get mute role because my database is temporarily down.\n" +
                 "Please select a one-time mute role to use to continue carrying out mute command.";
 
-            ActionRow selectMenu = getSelectRoleMenu(interaction.getArgumentUserValueByName("User").get().getId(), duration);
             interaction.createImmediateResponder()
-                .setContent(unavailableMsg)
-                .addComponents(selectMenu)
+                .setContent(errorResponse)
+                .addComponents(getSelectRoleMenu(interaction.getArgumentUserValueByName("User").get().getId(), duration))
                 .setFlags(MessageFlag.EPHEMERAL).respond();
             return;
         }
@@ -139,12 +142,19 @@ public class Mute {
         final User mutedUser = interaction.getArgumentUserValueByName("User").get();
         final Server server = interaction.getServer().get();
         final String reason = interaction.getArgumentStringValueByName("Reason").orElse("");
-        final Role muteRole = App.api.getRoleById(muteRoleID).orElseThrow();
+
+        // try to get mute role
+        Role muteRole = null;
+        try {
+            muteRole = App.api.getRoleById(muteRoleID).orElseThrow();
+        } catch (NoSuchElementException e) {
+            String errorResponse = "Mute role with ID `" + muteRoleID + "` does not exist.";
+            interaction.createImmediateResponder().setContent(errorResponse).respond();
+            return;
+        }
         
         // mute user
         muteUser(mutedUser, muteRole, duration, server, logChannelID, reason);
-
-        // respond
         sendMuteResponse(interaction, mutedUser, duration);
 
         //send log message
@@ -204,9 +214,8 @@ public class Mute {
                 }
             }
             //also mutes normally anyways with roledelay tempmute method
-            server.addRoleToUser(mutedUser, muteRole).join();
-            new RoleDelay(muteRole.getId(), mutedUser, server, logChannelID).tempMute(duration, TimeUnit.SECONDS);
-        } else { //use mute role to perm mute
+            new RoleDelay(muteRole.getId(), mutedUser, server).tempMute(duration, TimeUnit.SECONDS, logChannelID);
+        } else { //use mute role to perm mute if no duration set
             server.addRoleToUser(mutedUser, muteRole).join();
         }
     }
@@ -249,7 +258,6 @@ public class Mute {
 
     private static ActionRow getSelectRoleMenu(long mutedUserID, long muteDuration) {
         String customIdJson = new ManualMuteJSON(mutedUserID, muteDuration).encode();
-        System.out.println(customIdJson);
         return ActionRow.of(new SelectMenuBuilder(ComponentType.SELECT_MENU_ROLE, customIdJson).build());
     }
 
@@ -281,12 +289,13 @@ public class Mute {
 
     public static void handleUnmuteCommand(SlashCommandInteraction interaction, ServerSettings settings) {
         try {
+            User targetUser = interaction.getArgumentUserValueByName("User").get();
             // unmute
             try {
                 interaction.getServer().get().createUpdater()
-                    .removeRoleFromUser(interaction.getArgumentUserValueByName("User").get(), App.api.getRoleById(settings.getMuteRoleID().orElseThrow()).get())
-                    .removeUserTimeout(interaction.getArgumentUserValueByName("User").get())
-                    .update().join();
+                    .removeRoleFromUser(targetUser, App.api.getRoleById(settings.getMuteRoleID().orElseThrow()).get())
+                    .removeUserTimeout(targetUser)
+                    .update();
             } catch (NoSuchElementException e) { // thrown if null muteroleid
                 interaction.createImmediateResponder().setContent("You do not have a valid mute role set!").respond();
                 return;

@@ -14,15 +14,11 @@ public class RoleDelay {
     private final long roleId;
     private final User user;
     private final Server server;
-    private final long userId;
-    private final Long logChannelID;
 
-    public RoleDelay(long roleId, User user, Server server, Long logId) {
+    public RoleDelay(long roleId, User user, Server server) {
         this.roleId = roleId;
         this.user = user;
         this.server = server;
-        userId = user.getId();
-        logChannelID = logId;
     }
 
     public void addRoleAfter(long delay, TimeUnit unit) {
@@ -35,10 +31,13 @@ public class RoleDelay {
         scheduler.schedule(removeRole, delay, unit);
     }
 
-    public void tempMute(long delay, TimeUnit unit) {
+    public void tempMute(long delay, TimeUnit unit, Long logChannelID) {
+        // mute user
+        server.addRoleToUser(user, server.getRoleById(roleId).get()).join();
+        // create runnable to unmute user later
         Runnable runnable = new Runnable() {
             public void run() {
-                user.removeRole(server.getRoleById(roleId).get());
+                user.removeRole(server.getRoleById(roleId).orElseThrow());
                 server.getTextChannelById(logChannelID).ifPresent(channel -> {
                     channel.sendMessage(new EmbedBuilder()
                         .setTitle("Unmute")
@@ -51,10 +50,11 @@ public class RoleDelay {
                 });
             }
         };
+        // submit runnable
         scheduler.schedule(runnable, delay, unit);
     }
 
     public long getUserId() {
-        return userId;
+        return user.getId();
     }
 }
