@@ -87,8 +87,8 @@ public class ServerSettings {
         Database.getServerDoc(serverId).put(DatabaseKey.joinMessageChannelID, channelID);
     }
 
-    public Long getJoinMessageChannelID() throws DocumentUnavailableException {
-        return Database.getServerDoc(serverId).getLong(DatabaseKey.joinMessageChannelID);
+    public Optional<Long> getJoinMessageChannelID() throws DocumentUnavailableException {
+        return Optional.ofNullable(Database.getServerDoc(serverId).getLong(DatabaseKey.joinMessageChannelID));
     }
 
     public String getJoinMessage() throws DocumentUnavailableException {

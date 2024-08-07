@@ -63,7 +63,7 @@ public class JoinHandler {
 
     public void sendJoinMessage() {
         try {
-            App.api.getServerTextChannelById(serverSettings.getJoinMessageChannelID()).ifPresent(channel -> {
+            App.api.getServerTextChannelById(serverSettings.getJoinMessageChannelID().orElse(-1L)).ifPresent(channel -> {
                 channel.sendMessage(getJoinMessage());
             });
         } catch (DocumentUnavailableException e) {

@@ -1,8 +1,5 @@
-1. update commands and listeners so they are redundant when database is unavailable.
-    1a. need to make muteUser() method mute for correct amount of seconds
-    1b. possibly add another select menu to choose where to log message if needed
-    1c. mute command send an error msg if bot/user do not have permission to mute someone
-2. instead of sending mute log message manually, use listeners to do it automatically
-3. change Long server settings to Optional<Long>
-4. make mute command respond with error if missing permissions to mute
+1. move tempmute method out of roledelay and use LogEmbeds
+2. notify user of an error when bot cannot manage a mute role
+3. update roledelay tempmute method to be like heusc system
+4. revamp server listeners to forward functions to specific classes instead of all being in app.java
 5. add a gateway disconnect listener and in that event, pause or save role delays in database or cache

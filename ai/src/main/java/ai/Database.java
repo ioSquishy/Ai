@@ -36,6 +36,7 @@ public class Database implements Serializable {
     private static transient MongoDatabase mongoDatabase;
     private static transient MongoCollection<Document> mongoServerCollection;
     public static transient boolean mongoOK = true;
+    public static transient Long downUpTimeStartEpoch = Instant.now().getEpochSecond(); // record both how long the database has been up/down
 
     private static HashMap<Long, Document> serverCache = new HashMap<Long, Document>();
     private static final transient int currentDocumentVersion = 3;
@@ -52,6 +53,10 @@ public class Database implements Serializable {
         initMongoDB();
     };
 
+    private static void resetDownUpTime() {
+        downUpTimeStartEpoch = Instant.now().getEpochSecond();
+    }
+
     public static void initMongoDB() {
         try {
             mongoClient = MongoClients.create(connectionString);
@@ -64,12 +69,13 @@ public class Database implements Serializable {
                 autoCacheExe.scheduleAtFixedRate(autoCache, 10, 10, TimeUnit.SECONDS);
             } else {
                 mongoOK = true;
+                resetDownUpTime();
                 autoCacheExe.shutdownNow();
                 autoCacheExe = Executors.newSingleThreadScheduledExecutor();
                 autoCacheExe.scheduleAtFixedRate(autoCache, 10, 10, TimeUnit.SECONDS);
             }
             System.out.println("autoCacheExe running!");
-        } catch (Error e) {
+        } catch (Exception e) {
             e.printStackTrace();
             mongoNotOK();
         }
@@ -80,14 +86,15 @@ public class Database implements Serializable {
         // App.api.getUserById("263049275196309506").join().sendMessage("MongoDB failed to connect :(");
         if (mongoOK) {
             mongoOK = false;
-            saveCacheManually();
+            resetDownUpTime();
+            saveCacheLocally();
             autoCacheExe.shutdownNow();
             autoCacheExe = Executors.newSingleThreadScheduledExecutor();
             autoCacheExe.scheduleAtFixedRate(checkMongo, 10, 10, TimeUnit.MINUTES);
         }
     }
 
-    private static void saveCacheManually() {
+    private static void saveCacheLocally() {
         try {
             File file = new File("cache.ser");
             file.createNewFile();
@@ -235,7 +242,7 @@ public class Database implements Serializable {
         }
 
         public static String getStandardResponseString() {
-            return "Database is currently unreachable and server is not cached.";
+            return "Database is currently unreachable. Please try again later.";
         }
 
         public static void sendStandardResponse(InteractionBase interaction) {

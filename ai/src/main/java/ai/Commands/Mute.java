@@ -2,21 +2,15 @@ package ai.Commands;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ExecutionException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import org.bson.Document;
 import org.javacord.api.entity.message.MessageFlag;
-import org.javacord.api.entity.message.component.ActionRow;
-import org.javacord.api.entity.message.component.ComponentType;
-import org.javacord.api.entity.message.component.SelectMenuBuilder;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.InteractionBase;
-import org.javacord.api.interaction.SelectMenuInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.SlashCommandOptionBuilder;
@@ -25,30 +19,12 @@ import org.javacord.api.interaction.SlashCommandOptionType;
 import ai.App;
 import ai.Database.DocumentUnavailableException;
 import ai.ServerSettings;
-import ai.Constants.CustomID;
-import ai.Constants.GlobalJsonKeys;
-import ai.Constants.MuteJsonKeys;
-import ai.Utility.CustomCoder;
 import ai.Utility.LogEmbeds;
 import ai.Utility.ReadableTime;
 import ai.Utility.RoleDelay;
 
 
 public class Mute {
-
-    public static SlashCommandBuilder setMuteRoleCommand() {
-        return new SlashCommandBuilder()
-        .setName("setmuterole")
-        .setDescription("Set the mute role.")
-        .setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
-        .setEnabledInDms(false)
-        .addOption(new SlashCommandOptionBuilder()
-            .setName("role")
-            .setDescription("Role to set as mute role.")
-            .setRequired(true)
-            .setType(SlashCommandOptionType.ROLE)
-            .build());
-    }
 
     public static SlashCommandBuilder muteSlashCommand() {
         return new SlashCommandBuilder()
@@ -93,7 +69,7 @@ public class Mute {
                 .build());
     }
 
-    public SlashCommandBuilder unmuteCmd() {
+    public SlashCommandBuilder unmuteCommand() {
         return new SlashCommandBuilder()
             .setName("unmute")
             .setDescription("Unmute someone.")
@@ -102,6 +78,11 @@ public class Mute {
                 .setName("User")
                 .setType(SlashCommandOptionType.USER)
                 .setRequired(true)
+                .build())
+            .addOption(new SlashCommandOptionBuilder()
+                .setName("Reason")
+                .setType(SlashCommandOptionType.STRING)
+                .setRequired(false)
                 .build());
     }
 
@@ -111,7 +92,6 @@ public class Mute {
 
         long muteRoleID = -1;
         Long logChannelID = null; // null if not logging
-
         // ensure valid arguments
         try {
             if (!hasValidArguments(interaction, settings)) {
@@ -120,25 +100,17 @@ public class Mute {
             // save mute role id and log channel id
             muteRoleID = settings.getMuteRoleID().orElseThrow();
             logChannelID = settings.isLogMuteEnabled() ? settings.getLogChannelID().orElse(null) : null;
-            
-            // throw new DocumentUnavailableException("fake exception");
         } catch (NoSuchElementException e) {
             // if mute role doesnt exist
             String errorResponse = "You do not have a mute role set.";
             interaction.createImmediateResponder().setContent(errorResponse).respond();
             return;
         } catch (DocumentUnavailableException e) { 
-            String errorResponse = "Currently unable to get mute role because my database is temporarily down.\n" +
-                "Please select a one-time mute role to use to continue carrying out mute command.";
-
-            interaction.createImmediateResponder()
-                .setContent(errorResponse)
-                .addComponents(getSelectRoleMenu(interaction.getArgumentUserValueByName("User").get().getId(), duration))
-                .setFlags(MessageFlag.EPHEMERAL).respond();
+            DocumentUnavailableException.sendStandardResponse(interaction);
             return;
         }
 
-        
+        final User moderator = interaction.getUser();
         final User mutedUser = interaction.getArgumentUserValueByName("User").get();
         final Server server = interaction.getServer().get();
         final String reason = interaction.getArgumentStringValueByName("Reason").orElse("");
@@ -152,6 +124,14 @@ public class Mute {
             interaction.createImmediateResponder().setContent(errorResponse).respond();
             return;
         }
+
+        // check permissions
+        try {
+            hasPermission(moderator, mutedUser, muteRole, server);
+        } catch (NoPermissionException e) {
+            e.sendExceptionResponse(interaction);
+            return;
+        }
         
         // mute user
         muteUser(mutedUser, muteRole, duration, server, logChannelID, reason);
@@ -161,45 +141,12 @@ public class Mute {
         try {
             if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
                 App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
-                    channel.sendMessage(new LogEmbeds().mute(mutedUser, interaction.getUser(), new ReadableTime().compute(duration), reason));
+                    channel.sendMessage(new LogEmbeds().mute(mutedUser, moderator, new ReadableTime().compute(duration), reason));
                 });
             }
         } catch (DocumentUnavailableException e) {
             // e.printStackTrace();
         }
-        
-    }
-
-    public static void handleManualMute(SelectMenuInteraction interaction) {
-        ManualMuteJSON muteData = ManualMuteJSON.decode(interaction.getCustomId());
-
-        // ensure person using the command has permissions
-        final User invoker = interaction.getUser();
-        // if (invoker.getId() != muteData.moderatorID) {
-        //     interaction.createImmediateResponder().setContent("Only the original moderator can carry out this action.").respond();
-        //     return;
-        // }
-
-        // try to get muted user
-        User mutedUser = null;
-        try {
-            mutedUser = App.api.getUserById(muteData.mutedUserID).get(3, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
-            interaction.createImmediateResponder().setContent("Discord could not find the user you are trying to mute.").respond();
-            return;
-        }
-        
-        // get mute role
-        final Role muteRole = interaction.getSelectedRoles().get(0);
-
-        // get server
-        final Server server = interaction.getServer().get();
-
-        // mute user
-        final long durationSeconds = muteData.durationSeconds;
-        muteUser(mutedUser, muteRole, durationSeconds, server, null, "");
-        sendMuteResponse(interaction, mutedUser, durationSeconds);
     }
 
     private static void muteUser(User mutedUser, Role muteRole, long duration, Server server, Long logChannelID, String reason) {
@@ -256,34 +203,28 @@ public class Mute {
         return true;
     }
 
-    private static ActionRow getSelectRoleMenu(long mutedUserID, long muteDuration) {
-        String customIdJson = new ManualMuteJSON(mutedUserID, muteDuration).encode();
-        return ActionRow.of(new SelectMenuBuilder(ComponentType.SELECT_MENU_ROLE, customIdJson).build());
+    private static boolean hasPermission(User moderator, User mutedUser, Role muteRole, Server server) throws NoPermissionException {
+        if (!server.canManageRole(moderator, muteRole)) {
+            throw new NoPermissionException(moderator.getMentionTag() + " cannot manage the role: " + muteRole.getMentionTag());
+        }
+        if (!server.canTimeoutUser(moderator, mutedUser)) {
+            throw new NoPermissionException(moderator.getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
+        }
+        if (!server.canYouTimeoutUser(mutedUser)) {
+            throw new NoPermissionException(App.api.getYourself().getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
+        }
+        // if (!server.)
+        return true;
     }
-
-    private static class ManualMuteJSON extends CustomCoder {
-        private static final String customID = CustomID.MANUAL_MUTE;
-        public long mutedUserID;
-        public long durationSeconds;
-
-        public ManualMuteJSON(long mutedUserID, long durationSeconds) {
-            this.mutedUserID = mutedUserID;
-            this.durationSeconds = durationSeconds;
+    private static class NoPermissionException extends Exception {
+        final String exceptionReason;
+        public NoPermissionException(String reason) {
+            super(reason);
+            exceptionReason = reason;
         }
 
-        public String encode() {
-            return new Document()
-                .append(GlobalJsonKeys.customID, customID)
-                .append(MuteJsonKeys.mutedUserID, mutedUserID)
-                .append(MuteJsonKeys.durationSeconds, durationSeconds)
-                    .toJson();
-        }
-
-        public static ManualMuteJSON decode(String json) {
-            Document parsedJson = Document.parse(json);
-            return new ManualMuteJSON(
-                (Long) parsedJson.getLong(MuteJsonKeys.mutedUserID), 
-                (Integer) parsedJson.getInteger(MuteJsonKeys.durationSeconds));
+        public void sendExceptionResponse(InteractionBase interaction) {
+            interaction.createImmediateResponder().setContent(exceptionReason).setFlags(MessageFlag.SUPPRESS_NOTIFICATIONS).respond();
         }
     }
 
@@ -302,17 +243,19 @@ public class Mute {
             }
             
             // respond
-            interaction.createImmediateResponder().setContent(interaction.getArgumentUserValueByName("User").get().getName() + " was unmuted.").setFlags(MessageFlag.EPHEMERAL).respond().join();
+            interaction.createImmediateResponder().setContent(interaction.getArgumentUserValueByName("User").get().getName() + " was unmuted.").setFlags(MessageFlag.EPHEMERAL).respond();
     
             // log message if applicable
             if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && settings.getLogChannelID().isPresent()) {
                 App.api.getServerTextChannelById(settings.getLogChannelID().get()).get()
-                    .sendMessage(new LogEmbeds().unmute(interaction.getArgumentUserValueByName("User").get(), interaction.getUser()));
+                    .sendMessage(new LogEmbeds().unmute(
+                        interaction.getArgumentUserValueByName("User").get(),
+                        interaction.getUser(),
+                        Optional.ofNullable(interaction.getArgumentStringValueByName("Reason").orElse(null))));
             }
         } catch (DocumentUnavailableException e) {
             DocumentUnavailableException.sendStandardResponse(interaction);
         }
-        
     }
     
 }

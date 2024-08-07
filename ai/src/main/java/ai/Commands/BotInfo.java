@@ -4,6 +4,7 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 
 import ai.App;
+import ai.Database;
 
 public class BotInfo {
     public static SlashCommandBuilder createCommand() {
@@ -13,6 +14,12 @@ public class BotInfo {
     }
     
     public static void HandleCommand(SlashCommandInteraction interaction) {
-        interaction.createImmediateResponder().setContent("Version: `" + App.version + "`\nLast Restart: <t:" + App.startEpoch + ":R>\nDeveloper: `Squishy#0007`").respond();
+        String dbStatus = Database.mongoOK ? "up since: " : "down since: ";
+        interaction.createImmediateResponder().setContent(
+            "Version: `" + App.version + "`" + 
+            "\nDatabase " + dbStatus + "<t:" + Database.downUpTimeStartEpoch + ":f>" +
+            "\nLast Restart: <t:" + App.startEpoch + ":R>" +
+            "\nDeveloper: `squishhy`"
+            ).respond();
     }
 }

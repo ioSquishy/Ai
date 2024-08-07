@@ -10,10 +10,7 @@ import org.javacord.api.DiscordApiBuilder;
 
 import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
-import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.ModalInteraction;
-import org.javacord.api.interaction.SelectMenuInteraction;
-import org.javacord.api.interaction.SlashCommand;
 import org.javacord.api.interaction.SlashCommandInteraction;
 
 import java.io.Serializable;
@@ -71,16 +68,6 @@ public class App implements Serializable {
             }
         });
 
-        // select menu listener
-        api.addSelectMenuChooseListener(event -> {
-            SelectMenuInteraction interaction = event.getSelectMenuInteraction();
-            
-            switch (CustomCoder.getCustomID(interaction.getCustomId())) {
-                case CustomID.MANUAL_MUTE : Mute.handleManualMute(interaction); break;
-                    
-            }
-        });
-
         // join listener
         api.addServerMemberJoinListener(event -> {
             ServerSettings settings = new ServerSettings(event.getServer().getId());
@@ -126,7 +113,7 @@ public class App implements Serializable {
             try {
                 if (settings.isModLogEnabled() && settings.isLogBanEnabled() && settings.getLogChannelID().isPresent() && event.getServer().getTextChannelById(settings.getLogChannelID().get()).isPresent()) {
                     AuditLogEntry lastBan = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_BAN_ADD).join().getEntries().get(0);
-                    event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().unban(event.getUser(), lastBan.getUser().join()));
+                    event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().unban(event.getUser(), lastBan.getUser().join(), null));
                 }
             } catch (DocumentUnavailableException e) {
                 e.printStackTrace();
@@ -145,7 +132,7 @@ public class App implements Serializable {
                             } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
                         } else {
                             try {
-                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().unmute(event.getUser(), lastTimeout.getUser().get()));
+                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbeds().unmute(event.getUser(), lastTimeout.getUser().get(), null));
                             } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
                         }
                     }
