@@ -19,9 +19,10 @@ import org.javacord.api.interaction.SlashCommandOptionType;
 import ai.App;
 import ai.Database.DocumentUnavailableException;
 import ai.ServerSettings;
-import ai.Utility.LogEmbeds;
+import ai.Utility.LogEmbed;
 import ai.Utility.ReadableTime;
-import ai.Utility.RoleDelay;
+import ai.Utility.TaskScheduler;
+import ai.Utility.LogEmbed.EmbedType;
 
 
 public class Mute {
@@ -141,7 +142,7 @@ public class Mute {
         try {
             if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
                 App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
-                    channel.sendMessage(new LogEmbeds().mute(mutedUser, moderator, new ReadableTime().compute(duration), reason));
+                    channel.sendMessage(new LogEmbed().getEmbed(EmbedType.Mute, mutedUser, moderator, new ReadableTime().compute(duration), reason));
                 });
             }
         } catch (DocumentUnavailableException e) {
@@ -161,7 +162,8 @@ public class Mute {
                 }
             }
             //also mutes normally anyways with roledelay tempmute method
-            new RoleDelay(muteRole.getId(), mutedUser, server).tempMute(duration, TimeUnit.SECONDS, logChannelID);
+            server.addRoleToUser(mutedUser, muteRole).join();
+            new TaskScheduler.RoleDelay(muteRole.getId(), mutedUser, server).removeRoleAfter(duration, TimeUnit.SECONDS);
         } else { //use mute role to perm mute if no duration set
             server.addRoleToUser(mutedUser, muteRole).join();
         }
@@ -230,31 +232,52 @@ public class Mute {
 
     public static void handleUnmuteCommand(SlashCommandInteraction interaction, ServerSettings settings) {
         try {
-            User targetUser = interaction.getArgumentUserValueByName("User").get();
-            // unmute
+            // get variables
+            User targetUser;
+            Role muteRole;
             try {
-                interaction.getServer().get().createUpdater()
-                    .removeRoleFromUser(targetUser, App.api.getRoleById(settings.getMuteRoleID().orElseThrow()).get())
-                    .removeUserTimeout(targetUser)
-                    .update();
-            } catch (NoSuchElementException e) { // thrown if null muteroleid
+                targetUser = interaction.getArgumentUserValueByName("User").get();
+                muteRole = App.api.getRoleById(settings.getMuteRoleID().orElseThrow()).get();
+            } catch (NoSuchElementException e) { // thrown if bad muterole
                 interaction.createImmediateResponder().setContent("You do not have a valid mute role set!").respond();
                 return;
             }
+
+            // unmute and log
+            unmuteUser(targetUser, targetUser, interaction.getArgumentStringValueByName("reason").orElse(""), settings);
             
             // respond
-            interaction.createImmediateResponder().setContent(interaction.getArgumentUserValueByName("User").get().getName() + " was unmuted.").setFlags(MessageFlag.EPHEMERAL).respond();
-    
-            // log message if applicable
-            if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && settings.getLogChannelID().isPresent()) {
-                App.api.getServerTextChannelById(settings.getLogChannelID().get()).get()
-                    .sendMessage(new LogEmbeds().unmute(
-                        interaction.getArgumentUserValueByName("User").get(),
-                        interaction.getUser(),
-                        Optional.ofNullable(interaction.getArgumentStringValueByName("Reason").orElse(null))));
-            }
+            interaction.createImmediateResponder().setContent(targetUser.getName() + " was unmuted.").setFlags(MessageFlag.EPHEMERAL).respond();
         } catch (DocumentUnavailableException e) {
             DocumentUnavailableException.sendStandardResponse(interaction);
+        }
+    }
+
+    /**
+     * Unmutes user then logs event if applicable.
+     * @param offender
+     * @param moderator
+     * @param reason
+     * @param serverSettings
+     * @throws DocumentUnavailableException
+     */
+    public static void unmuteUser(User offender, User moderator, String reason, ServerSettings serverSettings) throws DocumentUnavailableException {
+        App.api.getServerById(serverSettings.getServerId()).get().createUpdater()
+            .removeRoleFromUser(offender, App.api.getRoleById(serverSettings.getMuteRoleID().get()).get())
+            .removeUserTimeout(offender)
+            .update();
+        
+        logUnmute(offender, moderator, reason, serverSettings);
+    }
+
+    private static void logUnmute(User offender, User moderator, String reason, ServerSettings serverSettings) {
+        try {
+            if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getLogChannelID().isPresent()) {
+                App.api.getServerTextChannelById(serverSettings.getLogChannelID().get()).get()
+                    .sendMessage(new LogEmbed().getEmbed(EmbedType.Unmute, offender, moderator, null, reason));
+            }
+        } catch (DocumentUnavailableException e) {
+            e.printStackTrace();
         }
     }
     

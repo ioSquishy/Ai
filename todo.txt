@@ -1,5 +1,6 @@
-1. move tempmute method out of roledelay and use LogEmbeds
+1. complete taskscheduler
+    1a. create a class to create a task containing a roledelay runnable and embeddelay runnable
 2. notify user of an error when bot cannot manage a mute role
-3. update roledelay tempmute method to be like heusc system
-4. revamp server listeners to forward functions to specific classes instead of all being in app.java
+3. revamp server listeners to forward functions to specific classes instead of all being in app.java
+4. update roledelay tempmute method to be like heusc system
 5. add a gateway disconnect listener and in that event, pause or save role delays in database or cache
