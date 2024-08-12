@@ -1,8 +1,11 @@
 package ai.Utility;
 
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.server.Server;
-import org.javacord.api.entity.user.User;
+import org.javacord.api.entity.message.MessageBuilder;
+import org.javacord.api.entity.message.mention.AllowedMentionsBuilder;
+
+import ai.App;
+import ai.Database.DocumentUnavailableException;
+import ai.ServerSettings;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -12,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 public class TaskScheduler {
     private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private static HashMap<Long, ScheduledTask> tasks = new HashMap<Long, ScheduledTask>();
-    private static Runnable checkTask(long key) {
+    private static HashMap<String, ScheduledTask> tasks = new HashMap<String, ScheduledTask>();
+    private static Runnable checkTask(String key) {
         return () -> {
             ScheduledTask scheduledTask = tasks.get(key);
             if (scheduledTask != null) {
@@ -35,7 +38,7 @@ public class TaskScheduler {
         }
     }
 
-    public static void scheduleTask(long key, Runnable task, long delay, TimeUnit timeUnit) {
+    public static void scheduleTask(String key, Runnable task, long delay, TimeUnit timeUnit) {
         long endTime = Instant.now().getEpochSecond() + timeUnit.toSeconds(delay);
         tasks.put(key, new ScheduledTask(endTime, task));
         scheduler.schedule(checkTask(key), delay, timeUnit);
@@ -46,33 +49,30 @@ public class TaskScheduler {
      * @param key
      * @return Task or null if key doesn't exist.
      */
-    public static ScheduledTask removeTask(long key) {
+    public static ScheduledTask removeTask(String key) {
         return tasks.remove(key);
     }
 
-    // public static class EmbedDelay {
-    //     private final EmbedBuilder embed;
-
-    //     public EmbedDelay()
-    // }
-
-    public static class RoleDelay {
-        private final long roleId;
-        private final User user;
-        private final Server server;
-
-        public RoleDelay(long roleId, User user, Server server) {
-            this.roleId = roleId;
-            this.user = user;
-            this.server = server;
-        }
-
-        public Runnable addRoleAfter(long delay, TimeUnit unit) {
-            return () -> user.addRole(server.getRoleById(roleId).orElseThrow());
-        }
-
-        public Runnable removeRoleAfter(long delay, TimeUnit unit) {
-            return () -> user.removeRole(server.getRoleById(roleId).orElseThrow());
-        }
+    /**
+     * Attempts to send an error message to either the server log channel or system channel. Will not do anything if fails.
+     * @param serverID server to send error message to
+     * @param content content
+     */
+    public static void sendErrorMessage(long serverID, String content) {
+        App.api.getServerById(serverID).ifPresent(server -> {
+            long errorChannelID;
+            try {
+                errorChannelID = new ServerSettings(serverID).getLogChannelID().orElse(server.getSystemChannel().orElseThrow().getId());
+                new MessageBuilder()
+                    .setContent(content)
+                    .setAllowedMentions(
+                        new AllowedMentionsBuilder()
+                            .setMentionUsers(false)
+                            .setMentionRoles(false)
+                            .setMentionEveryoneAndHere(false)
+                            .build())
+                    .send(server.getTextChannelById(errorChannelID).orElseThrow());
+            } catch (DocumentUnavailableException e) {}
+        });
     }
 }

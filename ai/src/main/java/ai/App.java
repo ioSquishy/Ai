@@ -99,7 +99,7 @@ public class App implements Serializable {
                 }
                 if (settings.isLogBanEnabled()) {
                     if (api.getChannelById(settings.getLogChannelID().orElse(-1L)).isPresent() && api.getChannelById(settings.getLogChannelID().orElse(-1L)).get().asTextChannel().isPresent()) {
-                        event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbed().getEmbed(EmbedType.Ban, event.getUser(), lastBan.getUser().join(),  null, event.requestBan().join().getReason().orElse("")));
+                        event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Ban, event.getUser(), lastBan.getUser().join(),  null, event.requestBan().join().getReason().orElse("")));
                     }
                 }
             } catch (DocumentUnavailableException e) {
@@ -114,7 +114,7 @@ public class App implements Serializable {
             try {
                 if (settings.isModLogEnabled() && settings.isLogBanEnabled() && settings.getLogChannelID().isPresent() && event.getServer().getTextChannelById(settings.getLogChannelID().get()).isPresent()) {
                     AuditLogEntry lastBan = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_BAN_ADD).join().getEntries().get(0);
-                    event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbed().getEmbed(EmbedType.Unban, event.getUser(), lastBan.getUser().join(), null, null));
+                    event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Unban, event.getUser(), lastBan.getUser().join(), null, null));
                 }
             } catch (DocumentUnavailableException e) {
                 e.printStackTrace();
@@ -129,11 +129,11 @@ public class App implements Serializable {
                     if (!lastTimeout.getUser().join().getIdAsString().equals(api.getYourself().getIdAsString())) { //if mod is not bot
                         if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
                             try {
-                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbed().getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
+                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
                             } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
                         } else {
                             try {
-                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbed().getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get(), null, null));
+                                event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get(), null, null));
                             } catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
                         }
                     }
@@ -148,7 +148,7 @@ public class App implements Serializable {
             ServerSettings settings = new ServerSettings(event.getServer().getId());
             try {
                 if (settings.isModLogEnabled() && settings.isLogKicksEnabled() && lastKick.getTarget().isPresent() && lastKick.getTarget().get().asUser().join().getId() == event.getUser().getId() && lastKick.getCreationTimestamp().getEpochSecond() >= Instant.now().getEpochSecond()-10 && settings.getLogChannelID().isPresent() && event.getServer().getTextChannelById(settings.getLogChannelID().get()).isPresent()) {
-                    event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(new LogEmbed().getEmbed(EmbedType.Kick, lastKick.getTarget().get().asUser().join(), lastKick.getUser().join(), null, lastKick.getReason().orElse("")));
+                    event.getServer().getTextChannelById(settings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Kick, lastKick.getTarget().get().asUser().join(), lastKick.getUser().join(), null, lastKick.getReason().orElse("")));
                 }
             } catch (DocumentUnavailableException e) {
                 e.printStackTrace();

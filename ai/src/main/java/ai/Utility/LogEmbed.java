@@ -14,11 +14,26 @@ public class LogEmbed {
         Unmute
     }
 
-    public EmbedBuilder getEmbed(EmbedType type, User offender, User moderator) {
+    /**
+     * Returns a modlog embed based on type.
+     * @param type
+     * @param offender
+     * @param moderator
+     * @return
+     */
+    public static EmbedBuilder getEmbed(EmbedType type, User offender, User moderator) {
         return getEmbed(type, offender, moderator, null, null);
     }
 
-    public EmbedBuilder getEmbed(EmbedType type, User offender, User moderator, String reason) {
+    /**
+     * Returns a modlog embed based on type.
+     * @param type
+     * @param offender
+     * @param moderator
+     * @param reason optional, can be null
+     * @return
+     */
+    public static EmbedBuilder getEmbed(EmbedType type, User offender, User moderator, String reason) {
         return getEmbed(type, offender, moderator, null, reason);
     }
 
@@ -31,7 +46,7 @@ public class LogEmbed {
      * @param reason optional, can be null
      * @return
      */
-    public EmbedBuilder getEmbed(EmbedType type, User offender, User moderator, String duration, String reason) {
+    public static EmbedBuilder getEmbed(EmbedType type, User offender, User moderator, String duration, String reason) {
         switch (type) {
             case Ban:
                 return standardEmbed(type, Color.RED, offender, moderator, reason);
@@ -47,7 +62,7 @@ public class LogEmbed {
         return null;
     }
 
-    private EmbedBuilder standardEmbed(EmbedType type, Color color, User offender, User moderator, String reason) {
+    private static EmbedBuilder standardEmbed(EmbedType type, Color color, User offender, User moderator, String reason) {
         if (reason == null || reason.isEmpty()) reason = "*none*";
         return new EmbedBuilder().setTitle(type.toString())
             .setColor(color)
@@ -59,7 +74,7 @@ public class LogEmbed {
             .setTimestampToNow();
     }
 
-    private EmbedBuilder timedEmbed(EmbedType type, Color color, User offender, User moderator, String duration, String reason) {
+    private static EmbedBuilder timedEmbed(EmbedType type, Color color, User offender, User moderator, String duration, String reason) {
         if (reason == null || reason.isEmpty()) reason = "*none*";
         if (duration.length() < 1) duration = "Forever";
 

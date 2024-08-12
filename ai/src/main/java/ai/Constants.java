@@ -5,8 +5,6 @@ public class Constants {
         public static final String SETTINGS_MODAL = "SETTINGS_MODAL";
         public static final String SETTINGS_JSON = "SETTINGS_JSON";
         public static final String JOIN_MESSAGE = "JOIN_MESSAGE";
-
-        public static final String MANUAL_MUTE = "MANUAL_MUTE";
     }
 
     public static class DatabaseKey {
@@ -28,13 +26,8 @@ public class Constants {
         public static final String joinRoleIDs = "joinRoleIDs";
     }
 
-    public static class GlobalJsonKeys {
-        public static final String customID = "customID";
-        public static final String moderatorID = "moderatorID";
-    }
-
-    public static class MuteJsonKeys {
-        public static final String mutedUserID = "mutedUserID";
-        public static final String durationSeconds = "durationSeconds";
+    public static class TaskSchedulerKeyPrefixs {
+        public static final String TEMP_MUTE = "TEMP_MUTE";
+        public static final String TEMP_MUTE_EMBED = "TEMP_MUTE_EMBED";
     }
 }
