@@ -1,6 +1,4 @@
-1. complete taskscheduler
-    1a. create a class to create a task containing a roledelay runnable and embeddelay runnable
-2. notify user of an error when bot cannot manage a mute role
-3. revamp server listeners to forward functions to specific classes instead of all being in app.java
-4. update roledelay tempmute method to be like heusc system
-5. add a gateway disconnect listener and in that event, pause or save role delays in database or cache
+1. revamp server listeners to forward functions to specific classes instead of all being in app.java
+2. add a gateway disconnect listener and in that event, pause or scheduled tasks in database or cache
+3. purge command
+4. organize mute.java code better to be more clear

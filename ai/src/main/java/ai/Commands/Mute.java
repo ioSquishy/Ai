@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.message.MessageFlag;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionType;
@@ -95,7 +96,6 @@ public class Mute {
         final long duration = (interaction.getArgumentLongValueByName("days").orElse((long) 0)*86400) + (interaction.getArgumentLongValueByName("hours").orElse((long) 0)*3600) + (interaction.getArgumentLongValueByName("minutes").orElse((long) 0)*60) + interaction.getArgumentLongValueByName("seconds").orElse((long) 0);
 
         long muteRoleID = -1;
-        Long initLogChannel = null; // null if not logging
         // ensure valid arguments
         try {
             if (!hasValidArguments(interaction, settings)) {
@@ -103,7 +103,6 @@ public class Mute {
             }
             // save mute role id and log channel id
             muteRoleID = settings.getMuteRoleID().orElseThrow();
-            initLogChannel = settings.isLogMuteEnabled() ? settings.getLogChannelID().orElse(null) : null;
         } catch (NoSuchElementException e) {
             // if mute role doesnt exist
             String errorResponse = "You do not have a mute role set.";
@@ -118,7 +117,6 @@ public class Mute {
         final User mutedUser = interaction.getArgumentUserValueByName("User").get();
         final Server server = interaction.getServer().get();
         final String reason = interaction.getArgumentStringValueByName("Reason").orElse("");
-        final Long finalLogChannel = initLogChannel;
 
         // try to get mute role
         Role muteRole = null;
@@ -139,34 +137,12 @@ public class Mute {
         }
         
         // mute user
-        muteUser(mutedUser, muteRole, duration, server, finalLogChannel, reason);
+        muteUser(mutedUser, muteRole, duration, server, reason);
         sendMuteResponse(interaction, mutedUser, duration);
-
-        //send log message
-        try {
-            if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && finalLogChannel != null) {
-                App.api.getTextChannelById(finalLogChannel).ifPresent(channel -> {
-                    channel.sendMessage(LogEmbed.getEmbed(EmbedType.Mute, mutedUser, moderator, new ReadableTime().compute(duration), reason));
-
-                    // auto unmute message
-                    EmbedBuilder unmuteEmbed = LogEmbed.getEmbed(
-                        EmbedType.Unmute,
-                        mutedUser,
-                        App.api.getYourself(), 
-                        "Temporary mute duration over.");
-                    TaskScheduler.scheduleTask(
-                        TaskSchedulerKeyPrefixs.TEMP_MUTE_EMBED+mutedUser.getId(), 
-                        new EmbedDelay(unmuteEmbed, finalLogChannel, server.getId()).sendEmbedRunnable(),
-                        duration, TimeUnit.SECONDS);
-                });
-                
-            }
-        } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
-        }
+        logMuteEvent(mutedUser, moderator, duration, reason, settings);
     }
 
-    private static void muteUser(User mutedUser, Role muteRole, long duration, Server server, Long logChannelID, String reason) {
+    private static void muteUser(User mutedUser, Role muteRole, long duration, Server server, String reason) {
         final Duration secondDuration = Duration.ofSeconds(duration);
         if (duration > 0) {
             //if duration is less than 28 days, use discord timeout
@@ -181,10 +157,36 @@ public class Mute {
             server.addRoleToUser(mutedUser, muteRole).join();
             TaskScheduler.scheduleTask(
                 TaskSchedulerKeyPrefixs.TEMP_MUTE+mutedUser.getId(),
-                new RoleDelay(muteRole.getId(), server.getId(), mutedUser.getId()).addRoleRunnable(),
+                new RoleDelay(muteRole.getId(), server.getId(), mutedUser.getId()).removeRoleRunnable(),
                 duration, TimeUnit.SECONDS);
         } else { //use mute role to perm mute if no duration set
             server.addRoleToUser(mutedUser, muteRole).join();
+        }
+    }
+
+    private static void logMuteEvent(User mutedUser, User moderator, long duration, String reason, ServerSettings settings) {
+        try {
+            final Long logChannelID = settings.getLogChannelID().orElse(null);
+
+            if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
+                App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
+                    channel.sendMessage(LogEmbed.getEmbed(EmbedType.Mute, mutedUser, moderator, new ReadableTime().compute(duration), reason));
+
+                    // auto unmute message
+                    EmbedBuilder unmuteEmbed = LogEmbed.getEmbed(
+                        EmbedType.Unmute,
+                        mutedUser,
+                        App.api.getYourself(), 
+                        "Temporary mute duration over.");
+                    TaskScheduler.scheduleTask(
+                        TaskSchedulerKeyPrefixs.TEMP_MUTE_EMBED+mutedUser.getId(), 
+                        new EmbedDelay(unmuteEmbed, logChannelID, settings.getServerId()).sendEmbedRunnable(),
+                        duration, TimeUnit.SECONDS);
+                });
+                
+            }
+        } catch (DocumentUnavailableException e) {
+            // e.printStackTrace();
         }
     }
 
@@ -207,20 +209,25 @@ public class Mute {
     private static boolean hasValidArguments(SlashCommandInteraction interaction, ServerSettings settings) throws DocumentUnavailableException {
         //check if user is in server
         if (interaction.requestArgumentUserValueByName("user").isEmpty()) { 
-            interaction.createImmediateResponder().setContent("That user is not in the server!").setFlags(MessageFlag.EPHEMERAL).respond().join();
+            interaction.createImmediateResponder().setContent("That user is not in the server!").setFlags(MessageFlag.EPHEMERAL).respond();
             return false;
         }
         //check if there is a muterole
-        if (settings.getMuteRoleID() == null) { 
-            interaction.createImmediateResponder().setContent("You do not have a mute role set!").setFlags(MessageFlag.EPHEMERAL).respond().join();
+        if (settings.getMuteRoleID().isEmpty()) { 
+            interaction.createImmediateResponder().setContent("You do not have a mute role set!").setFlags(MessageFlag.EPHEMERAL).respond();
             return false;
         }
         // check if muterole is valid
-        if (settings.getMuteRoleID().isEmpty() || App.api.getRoleById(settings.getMuteRoleID().get()).isEmpty()) {
-            interaction.createImmediateResponder().setContent("Invalid mute role!").setFlags(MessageFlag.EPHEMERAL).respond().join();
+        Role muteRole = App.api.getRoleById(settings.getMuteRoleID().get()).orElse(null);
+        if (muteRole == null) {
+            interaction.createImmediateResponder().setContent("Invalid mute role!").setFlags(MessageFlag.EPHEMERAL).respond();
             return false;
         }
-        
+        // check if bot can manage the muterole
+        if (!App.api.getYourself().canManageRole(muteRole)) {
+            interaction.createImmediateResponder().setContent("I cannot manage that role!").setFlags(MessageFlag.EPHEMERAL).respond();
+            return false;
+        }
         return true;
     }
 
@@ -234,7 +241,6 @@ public class Mute {
         if (!server.canYouTimeoutUser(mutedUser)) {
             throw new NoPermissionException(App.api.getYourself().getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
         }
-        // if (!server.)
         return true;
     }
     private static class NoPermissionException extends Exception {
@@ -254,6 +260,8 @@ public class Mute {
             // get variables
             User targetUser;
             Role muteRole;
+            final User moderator = interaction.getUser();
+            final String reason = interaction.getArgumentStringValueByName("reason").orElse("");
             try {
                 targetUser = interaction.getArgumentUserValueByName("User").get();
                 muteRole = App.api.getRoleById(settings.getMuteRoleID().orElseThrow()).get();
@@ -262,9 +270,12 @@ public class Mute {
                 return;
             }
 
-            // unmute and log
-            unmuteUser(targetUser, targetUser, interaction.getArgumentStringValueByName("reason").orElse(""), settings);
+            // unmute
+            unmuteUser(targetUser, moderator, reason, muteRole);
             
+            // log if needede
+            logUnmute(targetUser, moderator, reason, settings);
+
             // respond
             interaction.createImmediateResponder().setContent(targetUser.getName() + " was unmuted.").setFlags(MessageFlag.EPHEMERAL).respond();
         } catch (DocumentUnavailableException e) {
@@ -280,20 +291,18 @@ public class Mute {
      * @param serverSettings
      * @throws DocumentUnavailableException
      */
-    public static void unmuteUser(User offender, User moderator, String reason, ServerSettings serverSettings) throws DocumentUnavailableException {
-        App.api.getServerById(serverSettings.getServerId()).get().createUpdater()
-            .removeRoleFromUser(offender, App.api.getRoleById(serverSettings.getMuteRoleID().get()).get())
+    private static void unmuteUser(User offender, User moderator, String reason, Role muteRole) throws DocumentUnavailableException {
+        muteRole.getServer().createUpdater()
+            .removeRoleFromUser(offender, muteRole)
             .removeUserTimeout(offender)
             .update();
-        
-        logUnmute(offender, moderator, reason, serverSettings);
     }
 
     private static void logUnmute(User offender, User moderator, String reason, ServerSettings serverSettings) {
         try {
             if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getLogChannelID().isPresent()) {
                 App.api.getServerTextChannelById(serverSettings.getLogChannelID().get()).get()
-                    .sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, null, reason));
+                    .sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, reason));
             }
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
