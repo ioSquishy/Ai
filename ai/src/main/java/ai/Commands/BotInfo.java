@@ -4,7 +4,7 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 
 import ai.App;
-import ai.Database;
+import ai.Data.Database;
 
 public class BotInfo {
     public static SlashCommandBuilder createCommand() {

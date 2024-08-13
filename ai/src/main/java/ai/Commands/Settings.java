@@ -15,12 +15,12 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.callback.InteractionImmediateResponseBuilder;
 
-import ai.Database.DocumentUnavailableException;
 import ai.Utility.JoinHandler;
 import ai.Constants;
 import ai.Constants.CustomID;
-import ai.ServerSettings;
-import ai.ServerSettings.InvalidSettingsJsonException;
+import ai.Data.ServerSettings;
+import ai.Data.Database.DocumentUnavailableException;
+import ai.Data.ServerSettings.InvalidSettingsJsonException;
 
 public class Settings {
     public static SlashCommandBuilder createSettingsCommand() {

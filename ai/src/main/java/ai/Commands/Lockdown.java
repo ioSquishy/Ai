@@ -11,8 +11,8 @@ import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 
-import ai.Database.DocumentUnavailableException;
-import ai.ServerSettings;
+import ai.Data.ServerSettings;
+import ai.Data.Database.DocumentUnavailableException;
 
 
 public class Lockdown  {

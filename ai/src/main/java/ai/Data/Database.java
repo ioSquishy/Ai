@@ -1,4 +1,4 @@
-package ai;
+package ai.Data;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -28,6 +28,7 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 
+import ai.App;
 import ai.Constants.DatabaseKey;
 
 public class Database implements Serializable {

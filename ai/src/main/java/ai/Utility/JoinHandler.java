@@ -13,8 +13,8 @@ import org.javacord.api.entity.user.User;
 import org.javacord.api.event.server.member.ServerMemberJoinEvent;
 
 import ai.App;
-import ai.Database.DocumentUnavailableException;
-import ai.ServerSettings;
+import ai.Data.ServerSettings;
+import ai.Data.Database.DocumentUnavailableException;
 
 public class JoinHandler {
 

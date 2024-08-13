@@ -4,8 +4,8 @@ import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder;
 
 import ai.App;
-import ai.Database.DocumentUnavailableException;
-import ai.ServerSettings;
+import ai.Data.ServerSettings;
+import ai.Data.Database.DocumentUnavailableException;
 
 import java.time.Instant;
 import java.util.HashMap;

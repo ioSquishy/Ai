@@ -19,8 +19,8 @@ import org.javacord.api.interaction.SlashCommandOptionType;
 
 import ai.App;
 import ai.Constants.TaskSchedulerKeyPrefixs;
-import ai.Database.DocumentUnavailableException;
-import ai.ServerSettings;
+import ai.Data.ServerSettings;
+import ai.Data.Database.DocumentUnavailableException;
 import ai.Utility.LogEmbed;
 import ai.Utility.ReadableTime;
 import ai.Utility.TaskScheduler;

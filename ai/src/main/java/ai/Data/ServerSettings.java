@@ -1,4 +1,4 @@
-package ai;
+package ai.Data;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ import org.javacord.api.interaction.InteractionBase;
 import java.util.Optional;
 
 import ai.Constants.DatabaseKey;
-import ai.Database.DocumentUnavailableException;
+import ai.Data.Database.DocumentUnavailableException;
 
 public class ServerSettings {
     private long serverId;
