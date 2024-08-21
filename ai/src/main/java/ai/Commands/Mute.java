@@ -90,7 +90,16 @@ public class Mute {
                 .build());
     }
 
-    public static void handleMuteCommand(SlashCommandInteraction interaction, ServerSettings settings) {
+    public static void handleMuteCommand(SlashCommandInteraction interaction) {
+        // get server settings
+        ServerSettings settings;
+        try {
+            settings = new ServerSettings(interaction.getServer().get().getId());
+        } catch (DocumentUnavailableException e) {
+            DocumentUnavailableException.sendStandardResponse(interaction);
+            return;
+        }
+
         // calculate duration of mute in seconds
         final long duration = (interaction.getArgumentLongValueByName("days").orElse((long) 0)*86400) + (interaction.getArgumentLongValueByName("hours").orElse((long) 0)*3600) + (interaction.getArgumentLongValueByName("minutes").orElse((long) 0)*60) + interaction.getArgumentLongValueByName("seconds").orElse((long) 0);
 
@@ -106,9 +115,6 @@ public class Mute {
             // if mute role doesnt exist
             String errorResponse = "You do not have a mute role set.";
             interaction.createImmediateResponder().setContent(errorResponse).respond();
-            return;
-        } catch (DocumentUnavailableException e) { 
-            DocumentUnavailableException.sendStandardResponse(interaction);
             return;
         }
 
@@ -164,8 +170,7 @@ public class Mute {
     }
 
     private static void logMuteEvent(User mutedUser, User moderator, long duration, String reason, ServerSettings settings) {
-        try {
-            final Long logChannelID = settings.getLogChannelID().orElse(null);
+        final Long logChannelID = settings.getLogChannelID().orElse(null);
 
             if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
                 App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
@@ -184,9 +189,6 @@ public class Mute {
                 });
                 
             }
-        } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
-        }
     }
 
     private static void sendMuteResponse(InteractionBase interaction, User mutedUser, long duration) {
@@ -205,7 +207,7 @@ public class Mute {
      * @return Returns false if any fail.
      * @throws DocumentUnavailableException If database is unaccessible and server is not in cache.
      */
-    private static boolean hasValidArguments(SlashCommandInteraction interaction, ServerSettings settings) throws DocumentUnavailableException {
+    private static boolean hasValidArguments(SlashCommandInteraction interaction, ServerSettings settings) {
         //check if user is in server
         if (interaction.requestArgumentUserValueByName("user").isEmpty()) { 
             interaction.createImmediateResponder().setContent("That user is not in the server!").setFlags(MessageFlag.EPHEMERAL).respond();
@@ -254,8 +256,9 @@ public class Mute {
         }
     }
 
-    public static void handleUnmuteCommand(SlashCommandInteraction interaction, ServerSettings settings) {
+    public static void handleUnmuteCommand(SlashCommandInteraction interaction) {
         try {
+            ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
             // get variables
             User targetUser;
             Role muteRole;
@@ -298,13 +301,9 @@ public class Mute {
     }
 
     private static void logUnmute(User offender, User moderator, String reason, ServerSettings serverSettings) {
-        try {
-            if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getLogChannelID().isPresent()) {
-                App.api.getServerTextChannelById(serverSettings.getLogChannelID().get()).get()
-                    .sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, reason));
-            }
-        } catch (DocumentUnavailableException e) {
-            e.printStackTrace();
+        if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getLogChannelID().isPresent()) {
+            App.api.getServerTextChannelById(serverSettings.getLogChannelID().get()).get()
+                .sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, reason));
         }
     }
     

@@ -1,4 +1,4 @@
-package ai.Utility;
+package ai.Handlers;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -13,10 +13,24 @@ import org.javacord.api.entity.user.User;
 import org.javacord.api.event.server.member.ServerMemberJoinEvent;
 
 import ai.App;
-import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
+import ai.Data.ServerSettings;
 
 public class JoinHandler {
+
+    public static void handleJoinEvent(ServerMemberJoinEvent event) {
+        try {
+            ServerSettings settings = new ServerSettings(event.getServer().getId());
+
+            JoinHandler handler = new JoinHandler(event, settings);
+            if (settings.isJoinMessageEnabled()) {
+                handler.sendJoinMessage();
+            }
+        } catch (DocumentUnavailableException e) {
+            // e.printStackTrace();
+        }
+        
+    }
 
     public static final ServerMemberJoinEvent testJoinEvent = new ServerMemberJoinEvent() {
         @Override
@@ -48,12 +62,8 @@ public class JoinHandler {
 
     public String getJoinMessage() {
         String joinMessage = "";
-        try {
-            if (serverSettings.getJoinMessage() != null) {
-                joinMessage = serverSettings.getJoinMessage();
-            }
-        } catch (DocumentUnavailableException e) {
-            e.printStackTrace();
+        if (serverSettings.getJoinMessage() != null) {
+            joinMessage = serverSettings.getJoinMessage();
         }
         for (Entry<String, String> replaceEntry : joinMessageReplaceValues) {
             joinMessage = joinMessage.replaceAll(replaceEntry.getKey(), replaceEntry.getValue());
@@ -62,13 +72,9 @@ public class JoinHandler {
     }
 
     public void sendJoinMessage() {
-        try {
-            App.api.getServerTextChannelById(serverSettings.getJoinMessageChannelID().orElse(-1L)).ifPresent(channel -> {
-                channel.sendMessage(getJoinMessage());
-            });
-        } catch (DocumentUnavailableException e) {
-            e.printStackTrace();
-        }
+        App.api.getServerTextChannelById(serverSettings.getJoinMessageChannelID().orElse(-1L)).ifPresent(channel -> {
+            channel.sendMessage(getJoinMessage());
+        });
     }
 
     public void addRoles() {

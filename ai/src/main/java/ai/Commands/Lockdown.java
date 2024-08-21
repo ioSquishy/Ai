@@ -17,8 +17,9 @@ import ai.Data.Database.DocumentUnavailableException;
 
 public class Lockdown  {
 
-    public static void handleCommand(SlashCommandInteraction interaction, ServerSettings settings) {
+    public static void handleCommand(SlashCommandInteraction interaction) {
         try {
+            ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
             Long logChannelID = settings.isModLogEnabled() ? settings.getLogChannelID().orElse(null) : null;
             interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), logChannelID)).respond().join();
         } catch (DocumentUnavailableException e) {

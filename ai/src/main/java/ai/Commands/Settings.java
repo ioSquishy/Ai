@@ -15,12 +15,12 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.callback.InteractionImmediateResponseBuilder;
 
-import ai.Utility.JoinHandler;
 import ai.Constants;
 import ai.Constants.CustomID;
 import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Data.ServerSettings.InvalidSettingsJsonException;
+import ai.Handlers.JoinHandler;
 
 public class Settings {
     public static SlashCommandBuilder createSettingsCommand() {
@@ -31,8 +31,9 @@ public class Settings {
             .setEnabledInDms(false);
     }
 
-    public static void handleSettingsCommand(SlashCommandInteraction interaction, ServerSettings settings) {
+    public static void handleSettingsCommand(SlashCommandInteraction interaction) {
         try {
+            ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
             interaction.respondWithModal(CustomID.SETTINGS_MODAL, "Settings", createSettingsModalComponents(settings));
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
@@ -69,33 +70,31 @@ public class Settings {
         return actionRows;
     }
 
-    public static void handleSettingsModalSubmit(ModalInteraction interaction, ServerSettings settings) {
+    public static void handleSettingsModalSubmit(ModalInteraction interaction, long serverID) {
         String settingsJson = interaction.getTextInputValueByCustomId(CustomID.SETTINGS_JSON).get();
         String joinMsg = interaction.getTextInputValueByCustomId(CustomID.JOIN_MESSAGE).get();
         InteractionImmediateResponseBuilder responseMessage = interaction.createImmediateResponder();
-        // set join message and update settings
+        
         try {
+            // set join message and update settings
+            ServerSettings settings = new ServerSettings(serverID);
             settings.setJoinMessage(joinMsg);
             settings.updateSettings(settingsJson);
             responseMessage.setContent("Settings updated.");
+
+             // send message with new settings and join message
+            responseMessage
+                .addEmbed(getSettingsEmbed(settings))
+                .addEmbed(getJoinMessageEmbed(settings));
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
             responseMessage.setContent(DocumentUnavailableException.getStandardResponseString());
         } catch (InvalidSettingsJsonException | ClassCastException e) {
             e.printStackTrace();
             responseMessage.setContent(InvalidSettingsJsonException.getStandardResponseString());
+        } finally {
+            responseMessage.respond();
         }
-
-        // send message with new settings and join message
-        try {
-            responseMessage
-                .addEmbed(getSettingsEmbed(settings))
-                .addEmbed(getJoinMessageEmbed(settings));
-        } catch (DocumentUnavailableException e) {
-            e.printStackTrace();
-        }
-
-        responseMessage.respond();
     }
 
     private static EmbedBuilder getSettingsEmbed(ServerSettings settings) throws DocumentUnavailableException {
