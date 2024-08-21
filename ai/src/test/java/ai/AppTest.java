@@ -1,13 +1,11 @@
 package ai;
 
-public class AppTest {
-    public static void main(String[] args) {
-        test(null);
-    }
+import ai.API.OpenAI.ModerationEndpoint;
 
-    public static void test(String reason) {
-        System.out.println(reason);
-        reason = reason != null ? reason : "";
-        System.out.println(reason);
+public class AppTest {
+    public static void main(String[] args) throws Exception {
+        // ModerationEndpoint.moderateText("I want to kill them.").thenAcceptAsync(modResult -> {
+        //     System.out.println(modResult);
+        // });
     }
 }

@@ -1,4 +1,6 @@
 1. revamp server listeners to forward functions to specific classes instead of all being in app.java
 2. add a gateway disconnect listener and in that event, pause or scheduled tasks in database or cache
-3. purge command
-4. organize mute.java code better to be more clear
+3. scan messages with openai and send a warning to mod channel if message is flagged
+4. add a way to whitelist channels
+4. purge command
+5. organize mute.java code better to be more clear

@@ -40,6 +40,13 @@
       <artifactId>mongodb-driver-sync</artifactId>
       <version>4.10.2</version>
     </dependency>
+
+    <!-- https://github.com/square/moshi -->
+    <dependency>
+      <groupId>com.squareup.moshi</groupId>
+      <artifactId>moshi</artifactId>
+      <version>1.15.0</version>
+    </dependency>
   </dependencies>
 
   <build>

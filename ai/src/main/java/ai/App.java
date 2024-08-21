@@ -4,22 +4,26 @@ import ai.Events.ComponentEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
 import ai.Events.SlashCommandEvent;
+import ai.API.OpenAI.ModerationEndpoint;
 import ai.Commands.*;
 import ai.Data.Database;
 
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 
+import com.squareup.moshi.Moshi;
+
 import java.io.Serializable;
 import java.time.Instant;
-
+import java.util.Set;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
 public class App implements Serializable {
     private static final long serialVersionUID = 0;
 
-    public static final DiscordApi api = new DiscordApiBuilder().setToken(Dotenv.load().get("TOKEN")).setAllIntents().login().join();
+    public static final DiscordApi api = new DiscordApiBuilder().setToken(Dotenv.load().get("DISCORD_TOKEN")).setAllIntents().login().join();
+    public static final Moshi Moshi = new Moshi.Builder().build();
 
     public static transient final long startEpoch = Instant.now().getEpochSecond();
     public static transient final String version = "2";
@@ -27,13 +31,17 @@ public class App implements Serializable {
         System.out.println("Ai is online!");
         Database.initMongoDB();
 
-        // create slash commands
-        Ping.createCommand().createGlobal(api).join();
-        BotInfo.createCommand().createGlobal(api).join();
-        Mute.muteSlashCommand().createGlobal(api).join();
-        Unban.unbanSlashCommand().createGlobal(api).join();
-        Lockdown.createCommand().createGlobal(api).join();
-        Settings.createSettingsCommand().createGlobal(api).join();
+        // create/update slash commands
+        api.bulkOverwriteGlobalApplicationCommands(
+            Set.of(
+                Ping.createCommand(),
+                BotInfo.createCommand(),
+                Mute.muteSlashCommand(),
+                Unban.unbanSlashCommand(),
+                Lockdown.createCommand(),
+                Settings.createSettingsCommand()
+            )
+        );
         
         // add event listeners
         SlashCommandEvent.addSlashCommandCreateListener();

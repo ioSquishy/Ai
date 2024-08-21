@@ -9,12 +9,13 @@ import ai.Data.Database.DocumentUnavailableException;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class TaskScheduler {
-    private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private static HashMap<String, ScheduledTask> tasks = new HashMap<String, ScheduledTask>();
     private static Runnable checkTask(String key) {
         return () -> {
@@ -23,9 +24,27 @@ public class TaskScheduler {
                 if (scheduledTask.endTime <= Instant.now().getEpochSecond()+3) { // +3 for some tolerance
                     scheduledTask.task.run();
                     tasks.remove(key);
+                } else {
+                    long rescheduleTime = Instant.now().getEpochSecond()-scheduledTask.endTime;
+                    scheduler.schedule(checkTask(key), rescheduleTime, TimeUnit.SECONDS);
                 }
             }
         };
+    }
+
+    private static List<Runnable> pausedTasks = null;
+    public static void pauseTaskScheduler() {
+        pausedTasks = scheduler.shutdownNow();
+    }
+    public static void unpauseTaskScheduler() {
+        if (pausedTasks != null) {
+            scheduler = Executors.newSingleThreadScheduledExecutor();
+            pausedTasks.forEach(task -> scheduler.submit(task));
+            pausedTasks = null;
+        }
+    }
+    public static boolean isShutDown() {
+        return scheduler.isShutdown();
     }
 
     private static class ScheduledTask {
@@ -40,8 +59,8 @@ public class TaskScheduler {
 
     public static void scheduleTask(String key, Runnable task, long delay, TimeUnit timeUnit) {
         long endTime = Instant.now().getEpochSecond() + timeUnit.toSeconds(delay);
-        tasks.put(key, new ScheduledTask(endTime, task));
         scheduler.schedule(checkTask(key), delay, timeUnit);
+        tasks.put(key, new ScheduledTask(endTime, task));
     }
 
     /**
