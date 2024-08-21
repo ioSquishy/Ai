@@ -4,7 +4,6 @@ import ai.Events.ComponentEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
 import ai.Events.SlashCommandEvent;
-import ai.API.OpenAI.ModerationEndpoint;
 import ai.Commands.*;
 import ai.Data.Database;
 
