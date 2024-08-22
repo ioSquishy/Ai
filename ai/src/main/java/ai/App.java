@@ -23,6 +23,8 @@ public class App implements Serializable {
     private static final long serialVersionUID = 0;
 
     public static final DiscordApi api = new DiscordApiBuilder().setToken(Dotenv.load().get("DISCORD_TOKEN")).setAllIntents().login().join();
+    public static boolean gatewayDisconnected = false;
+
     public static final Moshi Moshi = new Moshi.Builder().build();
 
     public static transient final long startEpoch = Instant.now().getEpochSecond();

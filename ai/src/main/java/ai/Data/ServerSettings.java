@@ -65,19 +65,22 @@ public class ServerSettings {
         }
     }
 
+    public void setJoinMessage(String newJoinMessage) {
+        settings.put(DatabaseKey.joinMessage, newJoinMessage);
+    }
+
     public void updateSettings(String settingsJSON) throws InvalidSettingsJsonException, ClassCastException, DocumentUnavailableException {
         Document updates = verifySettingsJSON(settingsJSON); // causes InvalidSettingsJsonException
         Document updatedSettings = Database.updateDocument(serverId, settings, updates); // causes DocumentUnavailableException and ClassCastException
         settings.putAll(updatedSettings); // updates doc in cache as well
     }
 
+    // getters
+
     public List<Long> getJoinRoleIDs() {
         return Database.getLongList(settings, DatabaseKey.joinRoleIDs);
     }
     
-    public void setMuteRoleID(Long id) {
-        settings.put(DatabaseKey.muteRoleID, id);
-    }
     public Optional<Long> getMuteRoleID() {
         return Optional.ofNullable(settings.getLong(DatabaseKey.muteRoleID));
     }
@@ -86,24 +89,12 @@ public class ServerSettings {
         return settings.getBoolean(DatabaseKey.joinMessageEnabled);
     }
 
-    public void setJoinMessageChannelID(Long channelID) {
-        settings.put(DatabaseKey.joinMessageChannelID, channelID);
-    }
-
     public Optional<Long> getJoinMessageChannelID() {
         return Optional.ofNullable(settings.getLong(DatabaseKey.joinMessageChannelID));
     }
 
     public String getJoinMessage() {
         return settings.getString(DatabaseKey.joinMessage);
-    }
-
-    public void setJoinMessage(String newJoinMessage) {
-        settings.put(DatabaseKey.joinMessage, newJoinMessage);
-    }
-
-    public void setLogChannelID(Long id) {
-        settings.put(DatabaseKey.logChannelID, id);
     }
 
     public Optional<Long> getLogChannelID() {
