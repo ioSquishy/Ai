@@ -24,14 +24,15 @@ public class ServerSettings {
     }
 
     private static final List<String> editableKeys = List.of(
-        DatabaseKey.muteRoleID, 
-        DatabaseKey.modLogEnabled, 
-        DatabaseKey.logChannelID, 
-        DatabaseKey.logBans, 
-        DatabaseKey.logMutes, 
-        DatabaseKey.logKicks, 
-        DatabaseKey.joinMessageEnabled, 
-        DatabaseKey.joinMessageChannelID, 
+        DatabaseKey.muteRoleID,
+        DatabaseKey.modLogEnabled,
+        DatabaseKey.aiModEnabled,
+        DatabaseKey.logChannelID,
+        DatabaseKey.logBans,
+        DatabaseKey.logMutes,
+        DatabaseKey.logKicks,
+        DatabaseKey.joinMessageEnabled,
+        DatabaseKey.joinMessageChannelID,
         DatabaseKey.joinRoleIDs
     );
     public String getSettingsJSON() {
@@ -111,6 +112,10 @@ public class ServerSettings {
 
     public boolean isModLogEnabled() {
         return settings.getBoolean(DatabaseKey.modLogEnabled, false);
+    }
+
+    public boolean isAiModEnabled() {
+        return settings.getBoolean(DatabaseKey.aiModEnabled, false);
     }
 
     public boolean isLogBanEnabled() {

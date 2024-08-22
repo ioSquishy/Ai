@@ -40,7 +40,7 @@ public class Database implements Serializable {
     public static transient Long downUpTimeStartEpoch = Instant.now().getEpochSecond(); // record both how long the database has been up/down
 
     private static HashMap<Long, Document> serverCache = new HashMap<Long, Document>();
-    private static final transient int currentDocumentVersion = 3;
+    private static final transient int currentDocumentVersion = 4;
 
     private static transient ScheduledExecutorService autoCacheExe = Executors.newSingleThreadScheduledExecutor();
     private static transient Runnable autoCache = () -> {
@@ -163,6 +163,7 @@ public class Database implements Serializable {
             .append(DatabaseKey.lastCommand, (Long) Instant.now().getEpochSecond()/60)
             .append(DatabaseKey.muteRoleID, (Long) updates.getOrDefault(DatabaseKey.muteRoleID, original.getOrDefault(DatabaseKey.muteRoleID, null)))
             .append(DatabaseKey.modLogEnabled, (boolean) updates.getBoolean(DatabaseKey.modLogEnabled, original.getBoolean(DatabaseKey.modLogEnabled, false))) // mod log stuff
+            .append(DatabaseKey.aiModEnabled, (boolean) updates.getBoolean(DatabaseKey.aiModEnabled, original.getBoolean(DatabaseKey.aiModEnabled, false)))
             .append(DatabaseKey.logChannelID, (Long) updates.getOrDefault(DatabaseKey.logChannelID, original.getOrDefault(DatabaseKey.logChannelID, null)))
             .append(DatabaseKey.logBans, (boolean) updates.getBoolean(DatabaseKey.logBans, original.getBoolean(DatabaseKey.logBans, false)))
             .append(DatabaseKey.logMutes, (boolean) updates.getBoolean(DatabaseKey.logMutes, original.getBoolean(DatabaseKey.logMutes, false)))
@@ -174,7 +175,7 @@ public class Database implements Serializable {
                 (List<Long>) getListOrDefault(
                     getLongList(updates, DatabaseKey.joinRoleIDs), 
                     getListOrDefault(
-                        getLongList(updates, DatabaseKey.joinRoleIDs), Collections.EMPTY_LIST)));
+                        getLongList(original, DatabaseKey.joinRoleIDs), Collections.EMPTY_LIST)));
             // .append(DatabaseKey.joinRoleIDs, (List<Long>) updates.getList(DatabaseKey.joinRoleIDs, long.class, original.getList(DatabaseKey.joinRoleIDs, long.class, Collections.EMPTY_LIST)));
     }
 
@@ -186,6 +187,7 @@ public class Database implements Serializable {
         return list != null ? list : orDefault;
     }
     private static List<Long> getLongListFromObjectList(List<Object> objectList) throws ClassCastException {
+        if (objectList == null) return null;
         List<Long> longList = objectList.stream().mapToLong(obj -> {
             if (obj instanceof Number) {
                 return ((Number)obj).longValue();

@@ -13,6 +13,7 @@ public class Constants {
         public static final String lastCommand = "lastCommand";
         public static final String muteRoleID = "muteRoleID";
         public static final String modLogEnabled = "modLogEnabled";
+        public static final String aiModEnabled = "aiModEnabled";
         public static final String logChannelID = "logChannelID";
         public static final String logBans = "logBans";
         public static final String logMutes = "logMutes";

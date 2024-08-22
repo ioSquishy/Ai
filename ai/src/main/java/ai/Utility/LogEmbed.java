@@ -2,8 +2,11 @@ package ai.Utility;
 
 import java.awt.Color;
 
+import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
+
+import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
 
 public class LogEmbed {
     public static enum EmbedType {
@@ -86,6 +89,20 @@ public class LogEmbed {
                 "\n**Duration:** " + duration +
                 "\n**Reason:** " + reason + 
                 "\n**Moderator:** " + moderator.getName() + " " + moderator.getMentionTag()
+                )
+            .setFooter("ID: " + offender.getIdAsString())
+            .setTimestampToNow();
+    }
+
+    public static EmbedBuilder aiModEmbed(User offender, Message message, ModerationResult modResult) {
+        return new EmbedBuilder()
+            .setTitle("AiMod: Message Flagged")
+            .setUrl(message.getLink().toString())
+            .setColor(Color.YELLOW)
+            .setDescription(
+                "**Offender:** " + offender.getName() + " " + offender.getMentionTag() + 
+                "\n**Flag Reasons:** " + modResult.flagReasons + 
+                "\n**Message:** \n" + modResult.inputText
                 )
             .setFooter("ID: " + offender.getIdAsString())
             .setTimestampToNow();

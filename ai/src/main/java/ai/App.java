@@ -1,6 +1,7 @@
 package ai;
 
 import ai.Events.ComponentEvent;
+import ai.Events.MessageEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
 import ai.Events.SlashCommandEvent;
@@ -44,6 +45,8 @@ public class App implements Serializable {
         
         // add event listeners
         SlashCommandEvent.addSlashCommandCreateListener();
+
+        MessageEvent.addMessageCreateListener();
 
         ComponentEvent.addModalSubmitListener();
 
