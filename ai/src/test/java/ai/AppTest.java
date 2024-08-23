@@ -8,6 +8,7 @@ public class AppTest {
         Database.initMongoDB();
         
         ServerDocument serverDoc = Database.getServerDoc(791040843279630356L);
+        // System.out.println(serverDoc.test.aString);
         System.out.println(serverDoc.toString());
     }
 }

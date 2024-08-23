@@ -17,6 +17,12 @@ public class ServerDocument {
     private static transient final JsonAdapter<ServerDocument> documentAdapter = App.Moshi.adapter(ServerDocument.class).serializeNulls();
     protected static transient final JsonAdapter<ServerDocument.Settings> settingsAdapter = App.Moshi.adapter(ServerDocument.Settings.class).serializeNulls();
 
+    // this is required to ensure new values are initialized to default values
+    @SuppressWarnings("unused")
+    private ServerDocument() {
+        _id = 0;
+    }
+
     protected final long _id;
     public ServerDocument(long serverID) {
         this._id = serverID;
@@ -25,7 +31,6 @@ public class ServerDocument {
 
     public Settings settings = new Settings();
     public static class Settings {
-
         public ModerationSettings moderationSettings = new ModerationSettings();
         public static class ModerationSettings {
             public Long muteRoleID = null;
@@ -37,7 +42,6 @@ public class ServerDocument {
                 public boolean logBans = true;
                 public boolean logMutes = true;
                 public boolean logKicks = true;
-                public boolean testLog = true;
             }
 
             public Long aiModLogChannelID = null;
@@ -54,7 +58,6 @@ public class ServerDocument {
 
         public EventSettings eventSettings = new EventSettings();
         public static class EventSettings {
-
             public JoinSettings joinSettings = new JoinSettings();
             public static class JoinSettings {
                 public Long joinMessageChannelID = null;
@@ -63,18 +66,6 @@ public class ServerDocument {
                 public List<Long> joinRoleIDs = Collections.<Long>emptyList();
             }
         }
-    }
-
-    public Test test = new Test();
-    public static class Test {
-        public String aString = "a";
-        public String bString = "b";
-
-        @SuppressWarnings("unused")
-        private Test() {
-            
-        }
-        
     }
 
     // methods
@@ -93,6 +84,10 @@ public class ServerDocument {
     @Override
     public String toString() {
         return documentAdapter.indent("    ").toJson(this);
+    }
+
+    public void update() {
+        
     }
 
     // static methods
