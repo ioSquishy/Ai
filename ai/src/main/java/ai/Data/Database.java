@@ -154,7 +154,6 @@ public class Database implements Serializable {
     
     @SuppressWarnings("unchecked")
     public static Document updateDocument(long serverID, Document original, Document updates) throws ClassCastException {
-        System.out.println("update ran");
         original = original != null ? original : new Document();
         updates = updates != null ? updates : new Document();
         return new Document()
@@ -176,7 +175,6 @@ public class Database implements Serializable {
                     getLongList(updates, DatabaseKey.joinRoleIDs), 
                     getListOrDefault(
                         getLongList(original, DatabaseKey.joinRoleIDs), Collections.EMPTY_LIST)));
-            // .append(DatabaseKey.joinRoleIDs, (List<Long>) updates.getList(DatabaseKey.joinRoleIDs, long.class, original.getList(DatabaseKey.joinRoleIDs, long.class, Collections.EMPTY_LIST)));
     }
 
     public static List<Long> getLongList(Document document, String key) {
@@ -223,7 +221,6 @@ public class Database implements Serializable {
             e.printStackTrace();
             mongoNotOK();
         }
-        System.out.println("cache synced");
     }
 
     public static void removeServer(long serverID) {

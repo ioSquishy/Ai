@@ -8,7 +8,9 @@ import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -16,20 +18,26 @@ import java.util.concurrent.TimeUnit;
 public class TaskScheduler {
     private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private static HashMap<String, ScheduledTask> tasks = new HashMap<String, ScheduledTask>();
+    private static List<Runnable> deferredTasks = new ArrayList<Runnable>(); // used to store deferred tasks due to gateway disconnection
     private static Runnable checkTask(String key) {
         return () -> {
             ScheduledTask scheduledTask = tasks.get(key);
             if (scheduledTask != null) {
-                if (App.gatewayDisconnected) {
-                    scheduler.schedule(checkTask(key), 30, TimeUnit.SECONDS);
-                    return;
-                }
                 if (scheduledTask.endTime <= Instant.now().getEpochSecond()+2) { // +2 for some tolerance
+                    if (App.gatewayDisconnected) {
+                        deferredTasks.add(checkTask(key));
+                        return;
+                    }
                     scheduledTask.task.run();
                     tasks.remove(key);
                 }
             }
         };
+    }
+
+    public static void gatewayReconnectListener() {
+        deferredTasks.forEach(task -> task.run());
+        deferredTasks.clear();
     }
 
     private static class ScheduledTask {

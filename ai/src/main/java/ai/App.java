@@ -1,6 +1,7 @@
 package ai;
 
 import ai.Events.ComponentEvent;
+import ai.Events.GatewayEvent;
 import ai.Events.MessageEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
@@ -59,6 +60,9 @@ public class App implements Serializable {
         ServerMemberEvent.addTimeoutChangeListener();
         
         ServerEvent.addLeaveListener();
+
+        GatewayEvent.addReconnectionListener();
+        GatewayEvent.addLostConnectionListener();
     }
     
 }
