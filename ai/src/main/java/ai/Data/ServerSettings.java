@@ -1,5 +1,6 @@
 package ai.Data;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.bson.Document;
@@ -17,6 +18,7 @@ public class ServerSettings {
     public ServerSettings(long serverId) throws DocumentUnavailableException {
         this.serverId = serverId;
         settings = Database.getServerDoc(serverId);
+        updateLastCommandTime();
     }
 
     public long getServerId() {
@@ -63,6 +65,10 @@ public class ServerSettings {
         public static void sendStandardResponse(InteractionBase interaction) {
             interaction.createImmediateResponder().setContent(getStandardResponseString()).respond();
         }
+    }
+
+    public void updateLastCommandTime() {
+        settings.put(DatabaseKey.lastCommand, Instant.now().getEpochSecond()/60);
     }
 
     public void setJoinMessage(String newJoinMessage) {

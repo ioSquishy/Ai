@@ -151,7 +151,6 @@ public class Database implements Serializable {
         serverCache.put(serverID, document);
     }
 
-    
     @SuppressWarnings("unchecked")
     public static Document updateDocument(long serverID, Document original, Document updates) throws ClassCastException {
         original = original != null ? original : new Document();
@@ -204,12 +203,15 @@ public class Database implements Serializable {
     private static transient final ReplaceOptions replaceOpts = new ReplaceOptions().upsert(true);
     private static transient final BulkWriteOptions bulkOpts = new BulkWriteOptions().ordered(false);
     private static void syncCacheToDatabase() {
+        // create copy of cache
         HashMap<Long, Document> cacheCopy = new HashMap<Long, Document>(serverCache);
         ArrayList<ReplaceOneModel<Document>> writeReqs = new ArrayList<ReplaceOneModel<Document>>(cacheCopy.size());
         long currentMinute = Instant.now().getEpochSecond()/60;
         for (Map.Entry<Long, Document> entry : cacheCopy.entrySet()) {
+            // add document from cache to write requests
             writeReqs.add(new ReplaceOneModel<Document>(eq(DatabaseKey.id, entry.getKey()), entry.getValue(), replaceOpts));
-            if (currentMinute - entry.getValue().get(DatabaseKey.lastCommand, Instant.now().getEpochSecond()/60) > 30) { //removes doc from cache if they havent used a cmd in 30 mins
+            // remove doc from cache if they havent used a command in 30 mins
+            if (currentMinute - entry.getValue().get(DatabaseKey.lastCommand, Instant.now().getEpochSecond()/60) > 30) { 
                 serverCache.remove(entry.getKey());
             }
         }
