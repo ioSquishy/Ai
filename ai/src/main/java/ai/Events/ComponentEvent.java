@@ -6,7 +6,7 @@ import org.javacord.api.util.event.ListenerManager;
 
 import ai.App;
 import ai.Constants.CustomID;
-import ai.Commands.Settings;
+import ai.Commands.SettingsCommand;
 
 
 public class ComponentEvent {
@@ -18,7 +18,7 @@ public class ComponentEvent {
             
             switch (interaction.getCustomId()) {
                 case CustomID.SETTINGS_MODAL :
-                    Settings.handleSettingsModalSubmit(interaction, serverID);
+                    SettingsCommand.handleSettingsModalSubmit(interaction, serverID);
                     break;
             }
         });

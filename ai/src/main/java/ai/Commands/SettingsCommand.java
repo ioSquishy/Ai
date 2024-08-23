@@ -22,7 +22,7 @@ import ai.Data.Database.DocumentUnavailableException;
 import ai.Data.ServerSettings.InvalidSettingsJsonException;
 import ai.Handlers.JoinHandler;
 
-public class Settings {
+public class SettingsCommand {
     public static SlashCommandBuilder createSettingsCommand() {
         return new SlashCommandBuilder()
             .setName("settings")
