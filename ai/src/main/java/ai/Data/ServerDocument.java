@@ -15,7 +15,7 @@ import ai.Data.Database.DocumentUnavailableException;
 
 public class ServerDocument {
     private static transient final JsonAdapter<ServerDocument> documentAdapter = App.Moshi.adapter(ServerDocument.class).serializeNulls();
-    protected static transient final JsonAdapter<ServerDocument.Settings> settingsAdapter = App.Moshi.adapter(ServerDocument.Settings.class).serializeNulls();
+    private static transient final JsonAdapter<ServerDocument.Settings> settingsAdapter = App.Moshi.adapter(ServerDocument.Settings.class).serializeNulls();
 
     // this is required to ensure new values are initialized to default values
     @SuppressWarnings("unused")
@@ -24,61 +24,70 @@ public class ServerDocument {
     }
 
     protected final long _id;
-    public ServerDocument(long serverID) {
+    protected ServerDocument(long serverID) {
         this._id = serverID;
     }
-    public long lastCommandEpochSecond = Instant.now().getEpochSecond();
+    protected long lastCommandEpochSecond = Instant.now().getEpochSecond();
 
-    public Settings settings = new Settings();
-    public static class Settings {
-        public ModerationSettings moderationSettings = new ModerationSettings();
-        public static class ModerationSettings {
-            public Long muteRoleID = null;
-            public Long modLogChannelID = null;
-            public boolean modLogEnabled = false;
+    protected Settings settings = new Settings();
+    protected static class Settings {
+        protected ModerationSettings moderationSettings = new ModerationSettings();
+        protected static class ModerationSettings {
+            protected Long muteRoleID = null;
+            protected Long modLogChannelID = null;
+            protected boolean modLogEnabled = false;
 
-            public ModLogSettings modLogSettings = new ModLogSettings();
-            public static class ModLogSettings {
-                public boolean logBans = true;
-                public boolean logMutes = true;
-                public boolean logKicks = true;
+            protected ModLogSettings modLogSettings = new ModLogSettings();
+            protected static class ModLogSettings {
+                protected boolean logBans = true;
+                protected boolean logMutes = true;
+                protected boolean logKicks = true;
             }
 
-            public Long aiModLogChannelID = null;
-            public boolean aiModEnabled = false;
-            public AiModSettings aiModSettings = new AiModSettings();
-            public static class AiModSettings {
-                public boolean flagHate = true;
-                public boolean flagHarrassment = true;
-                public boolean flagSelfHarm = true;
-                public boolean flagSexual = true;
-                public boolean flagViolence = true;
+            protected Long aiModLogChannelID = null;
+            protected boolean aiModEnabled = false;
+            protected AiModSettings aiModSettings = new AiModSettings();
+            protected static class AiModSettings {
+                protected boolean flagHate = true;
+                protected boolean flagHarrassment = true;
+                protected boolean flagSelfHarm = true;
+                protected boolean flagSexual = true;
+                protected boolean flagViolence = true;
             }
         }
 
-        public EventSettings eventSettings = new EventSettings();
-        public static class EventSettings {
-            public JoinSettings joinSettings = new JoinSettings();
-            public static class JoinSettings {
-                public Long joinMessageChannelID = null;
-                public boolean joinMessageEnabled = false;
-                public String joinMessage = null;
-                public List<Long> joinRoleIDs = Collections.<Long>emptyList();
+        protected EventSettings eventSettings = new EventSettings();
+        protected static class EventSettings {
+            protected JoinSettings joinSettings = new JoinSettings();
+            protected static class JoinSettings {
+                protected Long joinMessageChannelID = null;
+                protected boolean joinMessageEnabled = false;
+                protected String joinMessage = null;
+                protected List<Long> joinRoleIDs = Collections.<Long>emptyList();
             }
+        }
+
+        @Override
+        public String toString() {
+            return settingsAdapter.indent("    ").toJson(this);
         }
     }
 
     // methods
-    public String toJson() {
+    protected String toJson() {
         return documentAdapter.toJson(this);
     }
 
-    public Document toBsonDocument() {
+    protected Document toBsonDocument() {
         return Document.parse(toJson());
     }
 
-    public void updateSettings(ServerDocument.Settings serverSettings) {
-        System.out.println(Document.parse(settingsAdapter.toJson(serverSettings)).keySet());
+    protected void setSettings(String settingsJSON) throws JsonDataException {
+        try {
+            this.settings = settingsAdapter.failOnUnknown().fromJson(settingsJSON);
+        } catch (IOException | JsonDataException e) {
+            throw new JsonDataException(e);
+        };
     }
 
     @Override
@@ -86,12 +95,8 @@ public class ServerDocument {
         return documentAdapter.indent("    ").toJson(this);
     }
 
-    public void update() {
-        
-    }
-
     // static methods
-    public static ServerDocument fromJson(String json) throws DocumentUnavailableException {
+    protected static ServerDocument fromJson(String json) throws DocumentUnavailableException {
         try {
             return documentAdapter.fromJson(json);
         } catch (JsonDataException | IOException e) {
@@ -100,7 +105,7 @@ public class ServerDocument {
         }
     }
     
-    public static ServerDocument fromBsonDocument(Document document) throws DocumentUnavailableException {
+    protected static ServerDocument fromBsonDocument(Document document) throws DocumentUnavailableException {
         return ServerDocument.fromJson(document.toJson());
     }
 }

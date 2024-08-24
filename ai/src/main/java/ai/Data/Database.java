@@ -106,11 +106,7 @@ public class Database implements Serializable {
         }
     }
 
-    public static Document cloneDocument(Document toClone) {
-        return new Document(toClone);
-    }
-
-    public static ServerDocument getServerDoc(long serverID) throws DocumentUnavailableException {
+    protected static ServerDocument getServerDoc(long serverID) throws DocumentUnavailableException {
         System.out.println(serverID);
         ServerDocument doc = checkCache(serverID);
         if (doc != null) { // if doc in cache return cached doc
@@ -140,7 +136,7 @@ public class Database implements Serializable {
     private static ServerDocument createNewDoc(long serverID) {
         return new ServerDocument(serverID);
     }
-    public static void putDocInCache(long serverID, ServerDocument serverDocument) {
+    private static void putDocInCache(long serverID, ServerDocument serverDocument) {
         serverCache.put(serverID, serverDocument);
     }
 
@@ -172,10 +168,6 @@ public class Database implements Serializable {
     public static void removeServer(long serverID) {
         serverCache.remove(serverID);
         mongoServerCollection.deleteOne(eq("_id", serverID));
-    }
-
-    public static void clearCache() {
-        serverCache.clear();
     }
 
     public static class DocumentUnavailableException extends Exception {

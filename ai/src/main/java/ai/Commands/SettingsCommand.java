@@ -15,6 +15,8 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.callback.InteractionImmediateResponseBuilder;
 
+import com.squareup.moshi.JsonDataException;
+
 import ai.Constants;
 import ai.Constants.CustomID;
 import ai.Data.ServerSettings;
@@ -89,9 +91,9 @@ public class SettingsCommand {
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
             responseMessage.setContent(DocumentUnavailableException.getStandardResponseString());
-        } catch (InvalidSettingsJsonException | ClassCastException e) {
+        } catch (JsonDataException e) {
             e.printStackTrace();
-            responseMessage.setContent(InvalidSettingsJsonException.getStandardResponseString());
+            responseMessage.setContent("Invalid settings JSON. No changes applied.");
         } finally {
             responseMessage.respond();
         }

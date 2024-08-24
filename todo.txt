@@ -1,8 +1,1 @@
-1a. add moderateMessage to server settings 
-1b. add a whitelisted channel array to server settings
-    1b.. add a whitelist flag array to server settings
-1c. mute user if their messages get flagged 3 times in 1 minute (use task scheduler)
-
-2. create a helper method to see if modlog channel is present
-3. purge until (message id) command
-4. organize mute.java code better to be more clear
+1. make ServerDocument updateable
