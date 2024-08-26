@@ -46,28 +46,45 @@ public class ModerationEndpoint {
         public final String id;
         public final String inputText;
         public final boolean flagged;
-        public final List<String> flagReasons;
+        public final Flags flags;
+        public static class Flags {
+            public final boolean hate;
+            public final boolean harassment;
+            public final boolean selfHarm;
+            public final boolean sexual;
+            public final boolean violence;
+            
+            public Flags(boolean hate, boolean harassment, boolean selfHarm, boolean sexual, boolean violence) {
+                this.hate = hate;
+                this.harassment = harassment;
+                this.selfHarm = selfHarm;
+                this.sexual = sexual;
+                this.violence = violence;
+            }
+
+            @Override
+            public String toString() {
+                String reasons = "";
+                if (hate) reasons += "hate, ";
+                if (harassment) reasons += "harassment, ";
+                if (selfHarm) reasons += "self-harm, ";
+                if (sexual) reasons += "sexual, ";
+                if (violence) reasons += "violence, ";
+                return reasons.isEmpty() ? "" : reasons.substring(0, reasons.length()-2);
+            }
+        }
 
         public ModerationResult(ModerationObject modObject, String inputText) {
             this.id = modObject.id;
             this.inputText = inputText;
             this.flagged = modObject.results.get(0).flagged;
-            this.flagReasons = getFlagReasons(modObject.results.get(0).categories);
-        }
 
-        private List<String> getFlagReasons(ModerationObjectCategories categories) {
-            // System.out.println(categories.toString());
-            List<String> reasons = new ArrayList<String>();
-            if (categories.hate) reasons.add("hate");
-            if (categories.harassment) reasons.add("harassment");
-            if (categories.selfharm) reasons.add("self-harm");
-            if (categories.sexual) reasons.add("sexual");
-            if (categories.violence) reasons.add("violence");
-            return reasons;
+            ModerationObjectCategories categories = modObject.results.get(0).categories;
+            this.flags = new Flags(categories.hate, categories.harassment, categories.selfharm, categories.sexual, categories.violence);
         }
 
         public String toString() {
-            return "id: " + id + "\ninputText: " + inputText + "\nflagged: " + flagged + "\nflagReasons: " + flagReasons.toString();
+            return "id: " + id + "\ninputText: " + inputText + "\nflagged: " + flagged + "\nflagReasons: " + flags.toString();
         }
     }
 

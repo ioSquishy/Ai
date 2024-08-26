@@ -31,8 +31,7 @@ public class AiMod {
         // if aimod is enabled check message
         if (!serverSettings.isAiModEnabled()) return;
         ModerationEndpoint.moderateText(message.getContent()).thenAcceptAsync(modResult -> {
-            System.out.println("message scanned");
-            if (!modResult.flagged) return;
+            if (!isFlaggedForServer(modResult, serverSettings)) return;
 
             // log event if applicable
             User author = message.getUserAuthor().get();
@@ -44,6 +43,16 @@ public class AiMod {
             // warnUser(author, server);
 
         });
+    }
+
+    public static boolean isFlaggedForServer(ModerationResult modResult, ServerSettings serverSettings) {
+        if (!modResult.flagged) return false;
+        if (modResult.flags.hate && serverSettings.flagHate()) return true;
+        if (modResult.flags.harassment && serverSettings.flagHarrassment()) return true;
+        if (modResult.flags.selfHarm && serverSettings.flagSelfHarm()) return true;
+        if (modResult.flags.sexual && serverSettings.flagSexual()) return true;
+        if (modResult.flags.violence && serverSettings.flagViolence()) return true;
+        return false; 
     }
 
     // // <serverID, <userID, warnings>>

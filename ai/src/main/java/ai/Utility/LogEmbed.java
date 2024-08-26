@@ -101,7 +101,7 @@ public class LogEmbed {
             .setColor(Color.YELLOW)
             .setDescription(
                 "**Offender:** " + offender.getName() + " " + offender.getMentionTag() + 
-                "\n**Flag Reasons:** " + modResult.flagReasons + 
+                "\n**Flag Reasons:** " + modResult.flags.toString() + 
                 "\n**Message:** \n" + modResult.inputText
                 )
             .setFooter("ID: " + offender.getIdAsString())

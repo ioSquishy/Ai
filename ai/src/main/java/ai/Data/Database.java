@@ -107,7 +107,6 @@ public class Database implements Serializable {
     }
 
     protected static ServerDocument getServerDoc(long serverID) throws DocumentUnavailableException {
-        System.out.println(serverID);
         ServerDocument doc = checkCache(serverID);
         if (doc != null) { // if doc in cache return cached doc
             return doc;

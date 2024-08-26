@@ -98,8 +98,29 @@ public class ServerSettings {
         return modLogSettings().logKicks;
     }
 
+    // ai mod
     public boolean isAiModEnabled() {
         return aiModSettings().aiModEnabled;
+    }
+
+    public boolean flagHate() {
+        return aiModSettings().flagHate;
+    }
+
+    public boolean flagHarrassment() {
+        return aiModSettings().flagHarrassment;
+    }
+
+    public boolean flagSelfHarm() {
+        return aiModSettings().flagSelfHarm;
+    }
+
+    public boolean flagSexual() {
+        return aiModSettings().flagSexual;
+    }
+
+    public boolean flagViolence() {
+        return aiModSettings().flagViolence;
     }
 
 }
