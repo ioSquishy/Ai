@@ -8,9 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,7 +27,6 @@ import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 
 import ai.App;
-import ai.Constants.DatabaseKey;
 
 public class Database implements Serializable {
     private static transient final String connectionString = "mongodb+srv://squishydb:" + Dotenv.load().get("MONGO_PASS") + "@sandbox.ujgwpn6.mongodb.net/?retryWrites=true&w=majority";
@@ -39,8 +36,7 @@ public class Database implements Serializable {
     public static transient boolean mongoOK = true;
     public static transient Long downUpTimeStartEpoch = Instant.now().getEpochSecond(); // record both how long the database has been up/down
 
-    private static HashMap<Long, Document> serverCache = new HashMap<Long, Document>();
-    private static final transient int currentDocumentVersion = 4;
+    private static HashMap<Long, ServerDocument> serverCache = new HashMap<Long, ServerDocument>();
 
     private static transient ScheduledExecutorService autoCacheExe = Executors.newSingleThreadScheduledExecutor();
     private static transient Runnable autoCache = () -> {
@@ -110,13 +106,9 @@ public class Database implements Serializable {
         }
     }
 
-    public static Document cloneDocument(Document toClone) {
-        return new Document(toClone);
-    }
-
-    public static Document getServerDoc(long serverID) throws DocumentUnavailableException {
+    protected static ServerDocument getServerDoc(long serverID) throws DocumentUnavailableException {
         System.out.println(serverID);
-        Document doc = checkCache(serverID);
+        ServerDocument doc = checkCache(serverID);
         if (doc != null) { // if doc in cache return cached doc
             return doc;
         } else { // if doc not in cache check database
@@ -134,84 +126,32 @@ public class Database implements Serializable {
             throw new DocumentUnavailableException("Database unreachable and server not in cache.");
         }
     }
-    private static Document checkCache(long userID) {
-        return serverCache.get(userID);
+    private static ServerDocument checkCache(long serverID) {
+        return serverCache.get(serverID);
     }
-    private static Document checkDatabase(long userID) {
-        Document document = mongoOK ? mongoServerCollection.find(eq(DatabaseKey.id, userID)).first() : null;
-        if (document != null && document.getInteger("documentVersion", -1) != currentDocumentVersion) {
-            document = updateDocument(document.getLong(DatabaseKey.id), document, new Document());
-        }
-        return document;
+    private static ServerDocument checkDatabase(long serverID) throws DocumentUnavailableException {
+        Document document = mongoOK ? mongoServerCollection.find(eq("_id", serverID)).first() : null;
+        return document != null ? ServerDocument.fromBsonDocument(document) : null;
     }
-    private static Document createNewDoc(long serverID) {
-        return updateDocument(serverID, null, null);
+    private static ServerDocument createNewDoc(long serverID) {
+        return new ServerDocument(serverID);
     }
-    public static void putDocInCache(long serverID, Document document) {
-        serverCache.put(serverID, document);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static Document updateDocument(long serverID, Document original, Document updates) throws ClassCastException {
-        original = original != null ? original : new Document();
-        updates = updates != null ? updates : new Document();
-        return new Document()
-            .append(DatabaseKey.id, (Long) serverID)
-            .append(DatabaseKey.documentVersion, (int) currentDocumentVersion)
-            .append(DatabaseKey.lastCommand, (Long) Instant.now().getEpochSecond()/60)
-            .append(DatabaseKey.muteRoleID, (Long) updates.getOrDefault(DatabaseKey.muteRoleID, original.getOrDefault(DatabaseKey.muteRoleID, null)))
-            .append(DatabaseKey.modLogEnabled, (boolean) updates.getBoolean(DatabaseKey.modLogEnabled, original.getBoolean(DatabaseKey.modLogEnabled, false))) // mod log stuff
-            .append(DatabaseKey.aiModEnabled, (boolean) updates.getBoolean(DatabaseKey.aiModEnabled, original.getBoolean(DatabaseKey.aiModEnabled, false)))
-            .append(DatabaseKey.logChannelID, (Long) updates.getOrDefault(DatabaseKey.logChannelID, original.getOrDefault(DatabaseKey.logChannelID, null)))
-            .append(DatabaseKey.logBans, (boolean) updates.getBoolean(DatabaseKey.logBans, original.getBoolean(DatabaseKey.logBans, false)))
-            .append(DatabaseKey.logMutes, (boolean) updates.getBoolean(DatabaseKey.logMutes, original.getBoolean(DatabaseKey.logMutes, false)))
-            .append(DatabaseKey.logKicks, (boolean) updates.getBoolean(DatabaseKey.logKicks, original.getBoolean(DatabaseKey.logKicks, false)))
-            .append(DatabaseKey.joinMessageEnabled, (boolean) updates.getBoolean(DatabaseKey.joinMessageEnabled, original.getBoolean(DatabaseKey.joinMessageEnabled, false))) // cosmetics
-            .append(DatabaseKey.joinMessageChannelID, (Long) updates.getOrDefault(DatabaseKey.joinMessageChannelID, original.getOrDefault(DatabaseKey.joinMessageChannelID, null)))
-            .append(DatabaseKey.joinMessage, (String) updates.getOrDefault(DatabaseKey.joinMessage, original.getOrDefault(DatabaseKey.joinMessage, null)))
-            .append(DatabaseKey.joinRoleIDs, 
-                (List<Long>) getListOrDefault(
-                    getLongList(updates, DatabaseKey.joinRoleIDs), 
-                    getListOrDefault(
-                        getLongList(original, DatabaseKey.joinRoleIDs), Collections.EMPTY_LIST)));
-    }
-
-    public static List<Long> getLongList(Document document, String key) {
-        return getLongListFromObjectList(document.getList(key, Object.class));
-    }
-
-    private static List<?> getListOrDefault(List<?> list, List<?> orDefault) {
-        return list != null ? list : orDefault;
-    }
-    private static List<Long> getLongListFromObjectList(List<Object> objectList) throws ClassCastException {
-        if (objectList == null) return null;
-        List<Long> longList = objectList.stream().mapToLong(obj -> {
-            if (obj instanceof Number) {
-                return ((Number)obj).longValue();
-            } else {
-                return -1;
-            }
-        }).boxed().toList();
-        
-        if (longList.stream().noneMatch(num -> num == -1)) {
-            return longList;
-        } else {
-            throw new ClassCastException("Could not cast List<Object> to List<Long>");
-        }
+    private static void putDocInCache(long serverID, ServerDocument serverDocument) {
+        serverCache.put(serverID, serverDocument);
     }
 
     private static transient final ReplaceOptions replaceOpts = new ReplaceOptions().upsert(true);
     private static transient final BulkWriteOptions bulkOpts = new BulkWriteOptions().ordered(false);
     private static void syncCacheToDatabase() {
         // create copy of cache
-        HashMap<Long, Document> cacheCopy = new HashMap<Long, Document>(serverCache);
+        HashMap<Long, ServerDocument> cacheCopy = new HashMap<Long, ServerDocument>(serverCache);
         ArrayList<ReplaceOneModel<Document>> writeReqs = new ArrayList<ReplaceOneModel<Document>>(cacheCopy.size());
         long currentMinute = Instant.now().getEpochSecond()/60;
-        for (Map.Entry<Long, Document> entry : cacheCopy.entrySet()) {
+        for (Map.Entry<Long, ServerDocument> entry : cacheCopy.entrySet()) {
             // add document from cache to write requests
-            writeReqs.add(new ReplaceOneModel<Document>(eq(DatabaseKey.id, entry.getKey()), entry.getValue(), replaceOpts));
+            writeReqs.add(new ReplaceOneModel<Document>(eq("_id", entry.getKey()), entry.getValue().toBsonDocument(), replaceOpts));
             // remove doc from cache if they havent used a command in 30 mins
-            if (currentMinute - entry.getValue().get(DatabaseKey.lastCommand, Instant.now().getEpochSecond()/60) > 30) { 
+            if (currentMinute - (entry.getValue().lastCommandEpochSecond/60) > 30) { 
                 serverCache.remove(entry.getKey());
             }
         }
@@ -227,11 +167,7 @@ public class Database implements Serializable {
 
     public static void removeServer(long serverID) {
         serverCache.remove(serverID);
-        mongoServerCollection.deleteOne(eq(DatabaseKey.id, serverID));
-    }
-
-    public static void clearCache() {
-        serverCache.clear();
+        mongoServerCollection.deleteOne(eq("_id", serverID));
     }
 
     public static class DocumentUnavailableException extends Exception {

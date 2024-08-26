@@ -20,7 +20,7 @@ public class Lockdown  {
     public static void handleCommand(SlashCommandInteraction interaction) {
         try {
             ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
-            Long logChannelID = settings.isModLogEnabled() ? settings.getLogChannelID().orElse(null) : null;
+            Long logChannelID = settings.isModLogEnabled() ? settings.getModLogChannelID().orElse(null) : null;
             interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), logChannelID)).respond().join();
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();

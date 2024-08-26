@@ -42,7 +42,7 @@ public class App implements Serializable {
                 Mute.muteSlashCommand(),
                 Unban.unbanSlashCommand(),
                 Lockdown.createCommand(),
-                Settings.createSettingsCommand()
+                SettingsCommand.createSettingsCommand()
             )
         );
         

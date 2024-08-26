@@ -15,14 +15,15 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.callback.InteractionImmediateResponseBuilder;
 
+import com.squareup.moshi.JsonDataException;
+
 import ai.Constants;
 import ai.Constants.CustomID;
 import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
-import ai.Data.ServerSettings.InvalidSettingsJsonException;
 import ai.Handlers.JoinHandler;
 
-public class Settings {
+public class SettingsCommand {
     public static SlashCommandBuilder createSettingsCommand() {
         return new SlashCommandBuilder()
             .setName("settings")
@@ -89,9 +90,9 @@ public class Settings {
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
             responseMessage.setContent(DocumentUnavailableException.getStandardResponseString());
-        } catch (InvalidSettingsJsonException | ClassCastException e) {
+        } catch (JsonDataException e) {
             e.printStackTrace();
-            responseMessage.setContent(InvalidSettingsJsonException.getStandardResponseString());
+            responseMessage.setContent("Invalid settings JSON. No changes applied.");
         } finally {
             responseMessage.respond();
         }
@@ -101,17 +102,7 @@ public class Settings {
         return new EmbedBuilder()
             .setTitle("Settings")
             .setDescription(
-                "Mute Role: <@&" + settings.getMuteRoleID().orElse(null) + ">\n" +
-                "\n" +
-                "ModLog Enabled: " + settings.isModLogEnabled() + "\n" +
-                "ModLog Channel: <#" + settings.getLogChannelID().orElse(null) + ">\n" +
-                "Log Bans: " + settings.isLogBanEnabled() + "\n" + 
-                "Log Mutes: " + settings.isLogMuteEnabled() + "\n" + 
-                "Log Kicks: " + settings.isLogKicksEnabled() + "\n" +
-                "\n" +
-                "Join Message Enabled: " + settings.isJoinMessageEnabled() + "\n" +
-                "Join Message Channel: <#" + settings.getJoinMessageChannelID() + ">\n" +
-                "Join Message Roles: " + formatJoinRoles(settings.getJoinRoleIDs())
+                settings.getSettingsJSON()
             );
     }
 

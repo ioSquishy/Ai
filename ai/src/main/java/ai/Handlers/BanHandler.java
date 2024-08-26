@@ -54,8 +54,8 @@ public class BanHandler {
     }
 
     private static boolean canLogBans(ServerSettings serverSettings, Server server) {
-        if (!serverSettings.getLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getLogChannelID().get();
+        if (!serverSettings.getModLogChannelID().isPresent()) return false;
+        long logChannelID = serverSettings.getModLogChannelID().get();
         if (!server.getTextChannelById(logChannelID).isPresent()) return false;
         return true;
     }
@@ -75,7 +75,7 @@ public class BanHandler {
     private static void logBan(ServerSettings serverSettings, ServerMemberBanEvent banEvent, AuditLogEntry lastBanEntry) {
         try {
             Ban ban = banEvent.requestBan().get();
-            banEvent.getServer().getTextChannelById(serverSettings.getLogChannelID().get()).get().sendMessage(
+            banEvent.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).get().sendMessage(
                 LogEmbed.getEmbed(EmbedType.Ban, ban.getUser(), banEvent.getUser(), ban.getReason().orElse("")));
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -84,7 +84,7 @@ public class BanHandler {
 
     private static void logUnban(ServerSettings serverSettings, ServerMemberUnbanEvent unbanEvent, AuditLogEntry lastUnbanEntry) {
         try {
-            unbanEvent.getServer().getTextChannelById(serverSettings.getLogChannelID().get()).get().sendMessage(
+            unbanEvent.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).get().sendMessage(
             LogEmbed.getEmbed(
                 EmbedType.Unban,
                 lastUnbanEntry.getTarget().get().asUser().get(3, TimeUnit.SECONDS),

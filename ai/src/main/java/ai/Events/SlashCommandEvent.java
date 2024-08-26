@@ -9,7 +9,7 @@ import ai.Commands.BotInfo;
 import ai.Commands.Lockdown;
 import ai.Commands.Mute;
 import ai.Commands.Ping;
-import ai.Commands.Settings;
+import ai.Commands.SettingsCommand;
 import ai.Commands.Unban;
 
 public class SlashCommandEvent {
@@ -25,7 +25,7 @@ public class SlashCommandEvent {
                 case "mute" : Mute.handleMuteCommand(interaction); break;
                 case "unmute" : Mute.handleUnmuteCommand(interaction); break;
                 case "unban" : Unban.handleCommand(interaction); break;
-                case "settings" : Settings.handleSettingsCommand(interaction); break;
+                case "settings" : SettingsCommand.handleSettingsCommand(interaction); break;
             }
         });
     }

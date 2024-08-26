@@ -1,130 +1,105 @@
 package ai.Data;
 
 import java.time.Instant;
-import java.util.List;
 
-import org.bson.Document;
-import org.bson.json.JsonWriterSettings;
-import org.javacord.api.interaction.InteractionBase;
+import com.squareup.moshi.JsonDataException;
+
 import java.util.Optional;
 
-import ai.Constants.DatabaseKey;
 import ai.Data.Database.DocumentUnavailableException;
+import ai.Data.ServerDocument.Settings.EventSettings;
+import ai.Data.ServerDocument.Settings.ModerationSettings;
+import ai.Data.ServerDocument.Settings.EventSettings.JoinSettings;
+import ai.Data.ServerDocument.Settings.ModerationSettings.AiModSettings;
+import ai.Data.ServerDocument.Settings.ModerationSettings.ModLogSettings;
 
 public class ServerSettings {
-    private final long serverId;
-    private Document settings;
+    private ServerDocument serverDocument;
 
     public ServerSettings(long serverId) throws DocumentUnavailableException {
-        this.serverId = serverId;
-        settings = Database.getServerDoc(serverId);
+        serverDocument = Database.getServerDoc(serverId);
+        serverDocument.settings = serverDocument.settings;
         updateLastCommandTime();
     }
 
     public long getServerId() {
-        return this.serverId;
-    }
-
-    private static final List<String> editableKeys = List.of(
-        DatabaseKey.muteRoleID,
-        DatabaseKey.modLogEnabled,
-        DatabaseKey.aiModEnabled,
-        DatabaseKey.logChannelID,
-        DatabaseKey.logBans,
-        DatabaseKey.logMutes,
-        DatabaseKey.logKicks,
-        DatabaseKey.joinMessageEnabled,
-        DatabaseKey.joinMessageChannelID,
-        DatabaseKey.joinRoleIDs
-    );
-    public String getSettingsJSON() {
-        Document settingsCopy = Database.cloneDocument(settings);
-        settingsCopy.keySet().retainAll(editableKeys);
-        return settingsCopy.toJson(JsonWriterSettings.builder().indent(true).build());
-    }
-
-    private Document verifySettingsJSON(String settingsJSON) throws InvalidSettingsJsonException {
-        try {
-            Document settings = Document.parse(settingsJSON);
-            settings.keySet().retainAll(editableKeys);
-            if (settings.keySet().containsAll(editableKeys) == false) {
-                throw new InvalidSettingsJsonException();
-            }
-            return settings;
-        } catch (Exception e) {
-            throw new InvalidSettingsJsonException();
-        }
-    }
-    public static class InvalidSettingsJsonException extends Exception {
-        public InvalidSettingsJsonException() {
-            super();
-        }
-        public static String getStandardResponseString() {
-            return "Invalid settings format. No changes applied."; 
-        }
-        public static void sendStandardResponse(InteractionBase interaction) {
-            interaction.createImmediateResponder().setContent(getStandardResponseString()).respond();
-        }
+        return serverDocument._id;
     }
 
     public void updateLastCommandTime() {
-        settings.put(DatabaseKey.lastCommand, Instant.now().getEpochSecond()/60);
+        serverDocument.lastCommandEpochSecond = Instant.now().getEpochSecond();
     }
 
     public void setJoinMessage(String newJoinMessage) {
-        settings.put(DatabaseKey.joinMessage, newJoinMessage);
+        serverDocument.hiddenSettings.joinMessage = newJoinMessage;
     }
 
-    public void updateSettings(String settingsJSON) throws InvalidSettingsJsonException, ClassCastException, DocumentUnavailableException {
-        Document updates = verifySettingsJSON(settingsJSON); // causes InvalidSettingsJsonException
-        Document updatedSettings = Database.updateDocument(serverId, settings, updates); // causes DocumentUnavailableException and ClassCastException
-        settings.putAll(updatedSettings); // updates doc in cache as well
-    }
-
-    // getters
-
-    public List<Long> getJoinRoleIDs() {
-        return Database.getLongList(settings, DatabaseKey.joinRoleIDs);
+    public void updateSettings(String settingsJSON) throws JsonDataException {
+        serverDocument.setSettings(settingsJSON);
     }
     
-    public Optional<Long> getMuteRoleID() {
-        return Optional.ofNullable(settings.getLong(DatabaseKey.muteRoleID));
+    public String getSettingsJSON() {
+        return serverDocument.settings.toString();
+    }
+
+    // private get commands
+
+    private ModerationSettings modSettings() {
+        return serverDocument.settings.moderationSettings;
+    }
+    private ModLogSettings modLogSettings() {
+        return modSettings().modLogSettings;
+    }
+    private AiModSettings aiModSettings() {
+        return modSettings().aiModSettings;
+    }
+
+    private EventSettings eventSettings() {
+        return serverDocument.settings.eventSettings;
+    }
+    private JoinSettings joinSettings() {
+        return eventSettings().joinSettings;
+    }
+
+    // public get commands
+    public String getJoinMessage() {
+        return serverDocument.hiddenSettings.joinMessage;
     }
 
     public boolean isJoinMessageEnabled() {
-        return settings.getBoolean(DatabaseKey.joinMessageEnabled);
+        return joinSettings().joinMessageEnabled;
     }
 
     public Optional<Long> getJoinMessageChannelID() {
-        return Optional.ofNullable(settings.getLong(DatabaseKey.joinMessageChannelID));
+        return Optional.ofNullable(joinSettings().joinMessageChannelID);
     }
 
-    public String getJoinMessage() {
-        return settings.getString(DatabaseKey.joinMessage);
+    public Optional<Long> getMuteRoleID() {
+        return Optional.ofNullable(modSettings().muteRoleID);
     }
 
-    public Optional<Long> getLogChannelID() {
-        return Optional.ofNullable(settings.getLong(DatabaseKey.logChannelID));
+    public Optional<Long> getModLogChannelID() {
+        return Optional.ofNullable(modLogSettings().modLogChannelID);
     }
 
     public boolean isModLogEnabled() {
-        return settings.getBoolean(DatabaseKey.modLogEnabled, false);
-    }
-
-    public boolean isAiModEnabled() {
-        return settings.getBoolean(DatabaseKey.aiModEnabled, false);
-    }
-
-    public boolean isLogBanEnabled() {
-        return settings.getBoolean(DatabaseKey.logBans, false);
+        return modLogSettings().modLogEnabled;
     }
 
     public boolean isLogMuteEnabled() {
-        return settings.getBoolean(DatabaseKey.logMutes, false);
+        return modLogSettings().logMutes;
+    }
+
+    public boolean isLogBanEnabled() {
+        return modLogSettings().logBans;
     }
 
     public boolean isLogKicksEnabled() {
-        return settings.getBoolean(DatabaseKey.logKicks, false);
+        return modLogSettings().logKicks;
     }
-    
+
+    public boolean isAiModEnabled() {
+        return aiModSettings().aiModEnabled;
+    }
+
 }
