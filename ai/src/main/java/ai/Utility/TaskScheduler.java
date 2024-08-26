@@ -74,7 +74,7 @@ public class TaskScheduler {
         App.api.getServerById(serverID).ifPresent(server -> {
             long errorChannelID;
             try {
-                errorChannelID = new ServerSettings(serverID).getLogChannelID().orElse(server.getSystemChannel().orElseThrow().getId());
+                errorChannelID = new ServerSettings(serverID).getModLogChannelID().orElse(server.getSystemChannel().orElseThrow().getId());
                 new MessageBuilder()
                     .setContent(content)
                     .setAllowedMentions(

@@ -21,7 +21,6 @@ import ai.Constants;
 import ai.Constants.CustomID;
 import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
-import ai.Data.ServerSettings.InvalidSettingsJsonException;
 import ai.Handlers.JoinHandler;
 
 public class SettingsCommand {
@@ -103,17 +102,7 @@ public class SettingsCommand {
         return new EmbedBuilder()
             .setTitle("Settings")
             .setDescription(
-                "Mute Role: <@&" + settings.getMuteRoleID().orElse(null) + ">\n" +
-                "\n" +
-                "ModLog Enabled: " + settings.isModLogEnabled() + "\n" +
-                "ModLog Channel: <#" + settings.getLogChannelID().orElse(null) + ">\n" +
-                "Log Bans: " + settings.isLogBanEnabled() + "\n" + 
-                "Log Mutes: " + settings.isLogMuteEnabled() + "\n" + 
-                "Log Kicks: " + settings.isLogKicksEnabled() + "\n" +
-                "\n" +
-                "Join Message Enabled: " + settings.isJoinMessageEnabled() + "\n" +
-                "Join Message Channel: <#" + settings.getJoinMessageChannelID() + ">\n" +
-                "Join Message Roles: " + formatJoinRoles(settings.getJoinRoleIDs())
+                settings.getSettingsJSON()
             );
     }
 

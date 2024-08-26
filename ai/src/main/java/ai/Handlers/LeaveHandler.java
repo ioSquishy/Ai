@@ -49,8 +49,8 @@ public class LeaveHandler {
     }
 
     private boolean canLogKicks() {
-        if (!serverSettings.getLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getLogChannelID().get();
+        if (!serverSettings.getModLogChannelID().isPresent()) return false;
+        long logChannelID = serverSettings.getModLogChannelID().get();
         if (!leaveEvent.getServer().getTextChannelById(logChannelID).isPresent()) return false;
         return true;
     }
@@ -75,7 +75,7 @@ public class LeaveHandler {
     }
 
     private void logKick() {
-        leaveEvent.getServer().getTextChannelById(serverSettings.getLogChannelID().get()).ifPresent(logChannel -> {
+        leaveEvent.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).ifPresent(logChannel -> {
             logChannel.sendMessage(LogEmbed.getEmbed(
                 EmbedType.Kick, lastKickedUser, lastKickEntry.getUser().join(), lastKickEntry.getReason().orElse("")
             ));

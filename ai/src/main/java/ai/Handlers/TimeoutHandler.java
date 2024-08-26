@@ -39,8 +39,8 @@ public class TimeoutHandler {
     }
 
     private static boolean canLogMutes(ServerSettings serverSettings, Server server) {
-        if (!serverSettings.getLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getLogChannelID().get();
+        if (!serverSettings.getModLogChannelID().isPresent()) return false;
+        long logChannelID = serverSettings.getModLogChannelID().get();
         if (!server.getTextChannelById(logChannelID).isPresent()) return false;
         return true;
     }
@@ -52,9 +52,9 @@ public class TimeoutHandler {
     private static void logTimeout(UserChangeTimeoutEvent event, ServerSettings serverSettings, AuditLogEntry lastTimeout) {
         try {
             if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
-                event.getServer().getTextChannelById(serverSettings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
+                event.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
             } else {
-                event.getServer().getTextChannelById(serverSettings.getLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
+                event.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
             }
         } catch (Exception e) {
 

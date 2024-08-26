@@ -34,20 +34,22 @@ public class ServerDocument {
         protected ModerationSettings moderationSettings = new ModerationSettings();
         protected static class ModerationSettings {
             protected Long muteRoleID = null;
-            protected Long modLogChannelID = null;
-            protected boolean modLogEnabled = false;
 
             protected ModLogSettings modLogSettings = new ModLogSettings();
             protected static class ModLogSettings {
+                protected boolean modLogEnabled = false;
+                protected Long modLogChannelID = null;
+                
                 protected boolean logBans = true;
                 protected boolean logMutes = true;
                 protected boolean logKicks = true;
             }
-
-            protected Long aiModLogChannelID = null;
-            protected boolean aiModEnabled = false;
+            
             protected AiModSettings aiModSettings = new AiModSettings();
             protected static class AiModSettings {
+                protected boolean aiModEnabled = false;
+                protected Long aiModLogChannelID = null;
+
                 protected boolean flagHate = true;
                 protected boolean flagHarrassment = true;
                 protected boolean flagSelfHarm = true;
@@ -62,7 +64,7 @@ public class ServerDocument {
             protected static class JoinSettings {
                 protected Long joinMessageChannelID = null;
                 protected boolean joinMessageEnabled = false;
-                protected String joinMessage = null;
+                
                 protected List<Long> joinRoleIDs = Collections.<Long>emptyList();
             }
         }
@@ -71,6 +73,11 @@ public class ServerDocument {
         public String toString() {
             return settingsAdapter.indent("    ").toJson(this);
         }
+    }
+
+    protected HiddenSettings hiddenSettings = new HiddenSettings();
+    protected static class HiddenSettings {
+        protected String joinMessage = null;
     }
 
     // methods

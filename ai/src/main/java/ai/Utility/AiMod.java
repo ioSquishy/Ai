@@ -37,7 +37,7 @@ public class AiMod {
             // log event if applicable
             User author = message.getUserAuthor().get();
             if (serverSettings.isModLogEnabled() && canLogMessage(serverSettings, server)) {
-                logMessage(author, message, modResult, server.getTextChannelById(serverSettings.getLogChannelID().get()).get());
+                logMessage(author, message, modResult, server.getTextChannelById(serverSettings.getModLogChannelID().get()).get());
             }
 
             // // warn/mute user if applicable
@@ -55,8 +55,8 @@ public class AiMod {
     // }
 
     private static boolean canLogMessage(ServerSettings serverSettings, Server server) {
-        if (!serverSettings.getLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getLogChannelID().get();
+        if (!serverSettings.getModLogChannelID().isPresent()) return false;
+        long logChannelID = serverSettings.getModLogChannelID().get();
         if (!server.getTextChannelById(logChannelID).isPresent()) return false;
         return true;
     }

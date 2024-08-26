@@ -170,7 +170,7 @@ public class Mute {
     }
 
     private static void logMuteEvent(User mutedUser, User moderator, long duration, String reason, ServerSettings settings) {
-        final Long logChannelID = settings.getLogChannelID().orElse(null);
+        final Long logChannelID = settings.getModLogChannelID().orElse(null);
 
             if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
                 App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
@@ -301,8 +301,8 @@ public class Mute {
     }
 
     private static void logUnmute(User offender, User moderator, String reason, ServerSettings serverSettings) {
-        if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getLogChannelID().isPresent()) {
-            App.api.getServerTextChannelById(serverSettings.getLogChannelID().get()).get()
+        if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getModLogChannelID().isPresent()) {
+            App.api.getServerTextChannelById(serverSettings.getModLogChannelID().get()).get()
                 .sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, reason));
         }
     }
