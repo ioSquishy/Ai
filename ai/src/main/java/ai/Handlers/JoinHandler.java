@@ -20,7 +20,7 @@ public class JoinHandler {
 
     public static void handleJoinEvent(ServerMemberJoinEvent event) {
         try {
-            ServerSettings settings = new ServerSettings(event.getServer().getId());
+            ServerSettings settings = new ServerSettings(event.getServer());
 
             JoinHandler handler = new JoinHandler(event, settings);
             if (settings.isJoinMessageEnabled()) {
@@ -72,7 +72,7 @@ public class JoinHandler {
     }
 
     public void sendJoinMessage() {
-        App.api.getServerTextChannelById(serverSettings.getJoinMessageChannelID().orElse(-1L)).ifPresent(channel -> {
+        serverSettings.getJoinMessageChannel().ifPresent(channel -> {
             channel.sendMessage(getJoinMessage());
         });
     }

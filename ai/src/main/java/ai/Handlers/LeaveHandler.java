@@ -21,7 +21,7 @@ public class LeaveHandler {
     public static void handleLeaveEvent(ServerMemberLeaveEvent event) {
         Server server = event.getServer();
         try {
-            ServerSettings serverSettings = new ServerSettings(server.getId());
+            ServerSettings serverSettings = new ServerSettings(server);
             new LeaveHandler(serverSettings, event).handleIfKick();
         } catch (DocumentUnavailableException e) {
             // e.printStackTrace();
@@ -49,9 +49,7 @@ public class LeaveHandler {
     }
 
     private boolean canLogKicks() {
-        if (!serverSettings.getModLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getModLogChannelID().get();
-        if (!leaveEvent.getServer().getTextChannelById(logChannelID).isPresent()) return false;
+        if (!serverSettings.getModLogChannel().isPresent()) return false;
         return true;
     }
 
@@ -75,7 +73,7 @@ public class LeaveHandler {
     }
 
     private void logKick() {
-        leaveEvent.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).ifPresent(logChannel -> {
+        serverSettings.getModLogChannel().ifPresent(logChannel -> {
             logChannel.sendMessage(LogEmbed.getEmbed(
                 EmbedType.Kick, lastKickedUser, lastKickEntry.getUser().join(), lastKickEntry.getReason().orElse("")
             ));

@@ -34,7 +34,7 @@ public class SettingsCommand {
 
     public static void handleSettingsCommand(SlashCommandInteraction interaction) {
         try {
-            ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
+            ServerSettings settings = new ServerSettings(interaction.getServer().get());
             interaction.respondWithModal(CustomID.SETTINGS_MODAL, "Settings", createSettingsModalComponents(settings));
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
@@ -71,14 +71,14 @@ public class SettingsCommand {
         return actionRows;
     }
 
-    public static void handleSettingsModalSubmit(ModalInteraction interaction, long serverID) {
+    public static void handleSettingsModalSubmit(ModalInteraction interaction) {
         String settingsJson = interaction.getTextInputValueByCustomId(CustomID.SETTINGS_JSON).get();
         String joinMsg = interaction.getTextInputValueByCustomId(CustomID.JOIN_MESSAGE).get();
         InteractionImmediateResponseBuilder responseMessage = interaction.createImmediateResponder();
         
         try {
             // set join message and update settings
-            ServerSettings settings = new ServerSettings(serverID);
+            ServerSettings settings = new ServerSettings(interaction.getServer().get());
             settings.setJoinMessage(joinMsg);
             settings.updateSettings(settingsJson);
             responseMessage.setContent("Settings updated.");

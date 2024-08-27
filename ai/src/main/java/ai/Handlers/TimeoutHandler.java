@@ -20,7 +20,7 @@ public class TimeoutHandler {
         try {
             Server server = event.getServer();
 
-            ServerSettings serverSettings = new ServerSettings(server.getId());
+            ServerSettings serverSettings = new ServerSettings(server);
             if (isLogMutesEnabled(serverSettings) && canLogMutes(serverSettings, server)) {
                 AuditLogEntry lastTimeout = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_UPDATE).join().getEntries().get(0);
                 if (!wasMutedByBot(lastTimeout)) { // if muted by bot then it was logged already with mute command
@@ -39,9 +39,7 @@ public class TimeoutHandler {
     }
 
     private static boolean canLogMutes(ServerSettings serverSettings, Server server) {
-        if (!serverSettings.getModLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getModLogChannelID().get();
-        if (!server.getTextChannelById(logChannelID).isPresent()) return false;
+        if (!serverSettings.getModLogChannel().isPresent()) return false;
         return true;
     }
 
@@ -52,9 +50,9 @@ public class TimeoutHandler {
     private static void logTimeout(UserChangeTimeoutEvent event, ServerSettings serverSettings, AuditLogEntry lastTimeout) {
         try {
             if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
-                event.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
+                serverSettings.getModLogChannel().get().sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
             } else {
-                event.getServer().getTextChannelById(serverSettings.getModLogChannelID().get()).get().sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
+                serverSettings.getModLogChannel().get().sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
             }
         } catch (Exception e) {
 

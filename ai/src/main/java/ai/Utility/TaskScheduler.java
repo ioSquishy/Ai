@@ -1,5 +1,6 @@
 package ai.Utility;
 
+import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder;
 
@@ -72,9 +73,9 @@ public class TaskScheduler {
      */
     public static void sendErrorMessage(long serverID, String content) {
         App.api.getServerById(serverID).ifPresent(server -> {
-            long errorChannelID;
+            ServerTextChannel errorChannel;
             try {
-                errorChannelID = new ServerSettings(serverID).getModLogChannelID().orElse(server.getSystemChannel().orElseThrow().getId());
+                errorChannel = new ServerSettings(server).getModLogChannel().orElse(server.getSystemChannel().orElseThrow());
                 new MessageBuilder()
                     .setContent(content)
                     .setAllowedMentions(
@@ -83,7 +84,7 @@ public class TaskScheduler {
                             .setMentionRoles(false)
                             .setMentionEveryoneAndHere(false)
                             .build())
-                    .send(server.getTextChannelById(errorChannelID).orElseThrow());
+                    .send(errorChannel);
             } catch (DocumentUnavailableException e) {}
         });
     }

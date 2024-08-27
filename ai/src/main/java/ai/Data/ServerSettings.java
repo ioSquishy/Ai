@@ -7,6 +7,11 @@ import com.squareup.moshi.JsonDataException;
 import java.util.List;
 import java.util.Optional;
 
+import org.javacord.api.entity.channel.ServerTextChannel;
+import org.javacord.api.entity.permission.Role;
+import org.javacord.api.entity.server.Server;
+
+import ai.App;
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Data.ServerDocument.Settings.EventSettings;
 import ai.Data.ServerDocument.Settings.ModerationSettings;
@@ -16,11 +21,18 @@ import ai.Data.ServerDocument.Settings.ModerationSettings.ModLogSettings;
 
 public class ServerSettings {
     private ServerDocument serverDocument;
+    private Server server;
 
-    public ServerSettings(long serverId) throws DocumentUnavailableException {
-        serverDocument = Database.getServerDoc(serverId);
+    public ServerSettings(Server server) throws DocumentUnavailableException {
+        serverDocument = Database.getServerDoc(server.getId());
         serverDocument.settings = serverDocument.settings;
         updateLastCommandTime();
+
+        this.server = server;
+    }
+
+    public ServerSettings(long serverID) throws DocumentUnavailableException {
+        this(App.api.getServerById(serverID).orElseThrow());
     }
 
     public long getServerId() {
@@ -44,7 +56,6 @@ public class ServerSettings {
     }
 
     // private get commands
-
     private ModerationSettings modSettings() {
         return serverDocument.settings.moderationSettings;
     }
@@ -62,6 +73,15 @@ public class ServerSettings {
         return eventSettings().joinSettings;
     }
 
+    private Optional<ServerTextChannel> getOptionalTextChannel(Long channelID) {
+        if (channelID == null) return null;
+        return server.getTextChannelById(channelID);
+    }
+    private Optional<Role> getOptionalRole(Long roleID) {
+        if (roleID == null) return null;
+        return server.getRoleById(roleID);
+    }
+
     // public get commands
     public String getJoinMessage() {
         return serverDocument.hiddenSettings.joinMessage;
@@ -71,16 +91,16 @@ public class ServerSettings {
         return joinSettings().joinMessageEnabled;
     }
 
-    public Optional<Long> getJoinMessageChannelID() {
-        return Optional.ofNullable(joinSettings().joinMessageChannelID);
+    public Optional<ServerTextChannel> getJoinMessageChannel() {
+        return getOptionalTextChannel(joinSettings().joinMessageChannelID);
     }
 
-    public Optional<Long> getMuteRoleID() {
-        return Optional.ofNullable(modSettings().muteRoleID);
+    public Optional<Role> getMuteRole() {
+        return getOptionalRole(modSettings().muteRoleID);
     }
 
-    public Optional<Long> getModLogChannelID() {
-        return Optional.ofNullable(modLogSettings().modLogChannelID);
+    public Optional<ServerTextChannel> getModLogChannel() {
+        return getOptionalTextChannel(modLogSettings().modLogChannelID);
     }
 
     public boolean isModLogEnabled() {
@@ -104,8 +124,8 @@ public class ServerSettings {
         return aiModSettings().aiModEnabled;
     }
 
-    public Optional<Long> getAiLogChannelID() {
-        return Optional.ofNullable(aiModSettings().aiLogChannelID);
+    public Optional<ServerTextChannel> getAiLogChannel() {
+        return getOptionalTextChannel(aiModSettings().aiLogChannelID);
     }
 
     public List<Long> getAiIgnoredChannels() {

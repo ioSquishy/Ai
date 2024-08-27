@@ -2,8 +2,10 @@ package ai.Commands;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.MessageFlag;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionType;
@@ -94,7 +96,7 @@ public class Mute {
         // get server settings
         ServerSettings settings;
         try {
-            settings = new ServerSettings(interaction.getServer().get().getId());
+            settings = new ServerSettings(interaction.getServer().get());
         } catch (DocumentUnavailableException e) {
             DocumentUnavailableException.sendStandardResponse(interaction);
             return;
@@ -103,18 +105,19 @@ public class Mute {
         // calculate duration of mute in seconds
         final long duration = (interaction.getArgumentLongValueByName("days").orElse((long) 0)*86400) + (interaction.getArgumentLongValueByName("hours").orElse((long) 0)*3600) + (interaction.getArgumentLongValueByName("minutes").orElse((long) 0)*60) + interaction.getArgumentLongValueByName("seconds").orElse((long) 0);
 
-        long muteRoleID = -1;
+        Role muteRole = null;
         // ensure valid arguments
         try {
-            if (!hasValidArguments(interaction, settings)) {
-                return;
-            }
+            hasValidArguments(settings);
             // save mute role id and log channel id
-            muteRoleID = settings.getMuteRoleID().orElseThrow();
+            muteRole = settings.getMuteRole().orElseThrow();
         } catch (NoSuchElementException e) {
             // if mute role doesnt exist
-            String errorResponse = "You do not have a mute role set.";
+            String errorResponse = "You do not have a valid mute role set.";
             interaction.createImmediateResponder().setContent(errorResponse).respond();
+            return;
+        } catch (MuteException e) {
+            e.sendExceptionResponse(interaction);
             return;
         }
 
@@ -123,20 +126,10 @@ public class Mute {
         final Server server = interaction.getServer().get();
         final String reason = interaction.getArgumentStringValueByName("Reason").orElse("");
 
-        // try to get mute role
-        Role muteRole = null;
-        try {
-            muteRole = App.api.getRoleById(muteRoleID).orElseThrow();
-        } catch (NoSuchElementException e) {
-            String errorResponse = "Mute role with ID `" + muteRoleID + "` does not exist.";
-            interaction.createImmediateResponder().setContent(errorResponse).respond();
-            return;
-        }
-
         // check permissions
         try {
             hasPermission(moderator, mutedUser, muteRole, server);
-        } catch (NoPermissionException e) {
+        } catch (MuteException e) {
             e.sendExceptionResponse(interaction);
             return;
         }
@@ -170,10 +163,10 @@ public class Mute {
     }
 
     private static void logMuteEvent(User mutedUser, User moderator, long duration, String reason, ServerSettings settings) {
-        final Long logChannelID = settings.getModLogChannelID().orElse(null);
+        final Optional<ServerTextChannel> logChannel = settings.getModLogChannel();
 
-            if (settings.isModLogEnabled() && settings.isLogMuteEnabled() && logChannelID != null) {
-                App.api.getTextChannelById(logChannelID).ifPresent(channel -> {
+            if (settings.isModLogEnabled() && settings.isLogMuteEnabled()) {
+                logChannel.ifPresent(channel -> {
                     channel.sendMessage(LogEmbed.getEmbed(EmbedType.Mute, mutedUser, moderator, new ReadableTime().compute(duration), reason));
 
                     // auto unmute message
@@ -184,7 +177,7 @@ public class Mute {
                         "Temporary mute duration over.");
                     TaskScheduler.scheduleTask(
                         TaskSchedulerKeyPrefixs.TEMP_MUTE_EMBED+mutedUser.getId(), 
-                        new EmbedDelay(unmuteEmbed, logChannelID, settings.getServerId()).sendEmbedRunnable(),
+                        new EmbedDelay(unmuteEmbed, channel.getId(), settings.getServerId()).sendEmbedRunnable(),
                         duration, TimeUnit.SECONDS);
                 });
                 
@@ -207,58 +200,50 @@ public class Mute {
      * @return Returns false if any fail.
      * @throws DocumentUnavailableException If database is unaccessible and server is not in cache.
      */
-    private static boolean hasValidArguments(SlashCommandInteraction interaction, ServerSettings settings) {
-        //check if user is in server
-        if (interaction.requestArgumentUserValueByName("user").isEmpty()) { 
-            interaction.createImmediateResponder().setContent("That user is not in the server!").setFlags(MessageFlag.EPHEMERAL).respond();
-            return false;
-        }
+    private static boolean hasValidArguments(ServerSettings settings) throws MuteException {
         //check if there is a muterole
-        if (settings.getMuteRoleID().isEmpty()) { 
-            interaction.createImmediateResponder().setContent("You do not have a mute role set!").setFlags(MessageFlag.EPHEMERAL).respond();
-            return false;
+        if (settings.getMuteRole().isEmpty()) { 
+            throw new MuteException("You do not have a mute role set!");
         }
         // check if muterole is valid
-        Role muteRole = App.api.getRoleById(settings.getMuteRoleID().get()).orElse(null);
+        Role muteRole = settings.getMuteRole().orElse(null);
         if (muteRole == null) {
-            interaction.createImmediateResponder().setContent("Invalid mute role!").setFlags(MessageFlag.EPHEMERAL).respond();
-            return false;
+            throw new MuteException("Invalid mute role!");
         }
         // check if bot can manage the muterole
         if (!App.api.getYourself().canManageRole(muteRole)) {
-            interaction.createImmediateResponder().setContent("I cannot manage that role!").setFlags(MessageFlag.EPHEMERAL).respond();
-            return false;
+            throw new MuteException("I cannot manage that role!");
         }
         return true;
     }
 
-    private static boolean hasPermission(User moderator, User mutedUser, Role muteRole, Server server) throws NoPermissionException {
+    private static boolean hasPermission(User moderator, User mutedUser, Role muteRole, Server server) throws MuteException {
         if (!server.canManageRole(moderator, muteRole)) {
-            throw new NoPermissionException(moderator.getMentionTag() + " cannot manage the role: " + muteRole.getMentionTag());
+            throw new MuteException(moderator.getMentionTag() + " cannot manage the role: " + muteRole.getMentionTag());
         }
         if (!server.canTimeoutUser(moderator, mutedUser)) {
-            throw new NoPermissionException(moderator.getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
+            throw new MuteException(moderator.getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
         }
         if (!server.canYouTimeoutUser(mutedUser)) {
-            throw new NoPermissionException(App.api.getYourself().getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
+            throw new MuteException(App.api.getYourself().getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
         }
         return true;
     }
-    private static class NoPermissionException extends Exception {
+    private static class MuteException extends Exception {
         final String exceptionReason;
-        public NoPermissionException(String reason) {
+        public MuteException(String reason) {
             super(reason);
             exceptionReason = reason;
         }
 
         public void sendExceptionResponse(InteractionBase interaction) {
-            interaction.createImmediateResponder().setContent(exceptionReason).setFlags(MessageFlag.SUPPRESS_NOTIFICATIONS).respond();
+            interaction.createImmediateResponder().setContent(exceptionReason).setFlags(MessageFlag.SUPPRESS_NOTIFICATIONS, MessageFlag.EPHEMERAL).respond();
         }
     }
 
     public static void handleUnmuteCommand(SlashCommandInteraction interaction) {
         try {
-            ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
+            ServerSettings settings = new ServerSettings(interaction.getServer().get());
             // get variables
             User targetUser;
             Role muteRole;
@@ -266,7 +251,7 @@ public class Mute {
             final String reason = interaction.getArgumentStringValueByName("reason").orElse("");
             try {
                 targetUser = interaction.getArgumentUserValueByName("User").get();
-                muteRole = App.api.getRoleById(settings.getMuteRoleID().orElseThrow()).get();
+                muteRole = settings.getMuteRole().orElseThrow();
             } catch (NoSuchElementException e) { // thrown if bad muterole
                 interaction.createImmediateResponder().setContent("You do not have a valid mute role set!").respond();
                 return;
@@ -301,9 +286,10 @@ public class Mute {
     }
 
     private static void logUnmute(User offender, User moderator, String reason, ServerSettings serverSettings) {
-        if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled() && serverSettings.getModLogChannelID().isPresent()) {
-            App.api.getServerTextChannelById(serverSettings.getModLogChannelID().get()).get()
-                .sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, reason));
+        if (serverSettings.isModLogEnabled() && serverSettings.isLogMuteEnabled()) {
+            serverSettings.getModLogChannel().ifPresent(channel -> {
+                channel.sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, offender, moderator, reason));
+            });
         }
     }
     

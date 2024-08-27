@@ -2,6 +2,7 @@ package ai.Commands;
 
 import java.awt.Color;
 
+import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionState;
 import org.javacord.api.entity.permission.PermissionType;
@@ -19,9 +20,9 @@ public class Lockdown  {
 
     public static void handleCommand(SlashCommandInteraction interaction) {
         try {
-            ServerSettings settings = new ServerSettings(interaction.getServer().get().getId());
-            Long logChannelID = settings.isModLogEnabled() ? settings.getModLogChannelID().orElse(null) : null;
-            interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), logChannelID)).respond().join();
+            ServerSettings settings = new ServerSettings(interaction.getServer().get());
+            ServerTextChannel logChannel = settings.isModLogEnabled() ? settings.getModLogChannel().orElse(null) : null;
+            interaction.createImmediateResponder().setContent(runSlashCmd(interaction.getServer().get(), interaction.getUser(), logChannel)).respond().join();
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
             interaction.createImmediateResponder().setContent(
@@ -38,7 +39,7 @@ public class Lockdown  {
             .setDefaultDisabled();
     }
 
-    private static String runSlashCmd(Server server, User author, Long logChannelId) {
+    private static String runSlashCmd(Server server, User author, ServerTextChannel logChannel) {
         Role everyoneRole = server.getEveryoneRole();
         PermissionState state = everyoneRole.getPermissions().getState(PermissionType.SEND_MESSAGES) == PermissionState.ALLOWED ? PermissionState.DENIED : PermissionState.ALLOWED;
             everyoneRole.updatePermissions(everyoneRole.getPermissions().toBuilder()
@@ -49,13 +50,11 @@ public class Lockdown  {
                 .setState(PermissionType.CHANGE_NICKNAME, state)
                 .build()).join();
         boolean initialized = state == PermissionState.DENIED;
-        if (logChannelId != null) {
+        if (logChannel != null) {
             if (initialized) {
-                server.getTextChannelById(logChannelId).ifPresent(channel -> 
-                    channel.sendMessage(getLockdownEnabledEmbed(author)));
+                logChannel.sendMessage(getLockdownEnabledEmbed(author));
             } else {
-                server.getTextChannelById(logChannelId).ifPresent(channel -> 
-                    channel.sendMessage(getLockdownDisabledEmbed(author)));
+                logChannel.sendMessage(getLockdownDisabledEmbed(author));
             }
         } else {
 
