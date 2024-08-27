@@ -2,6 +2,7 @@ package ai.Utility;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.Message;
@@ -31,12 +32,12 @@ public class AiMod {
         // if aimod is enabled check message
         if (!serverSettings.isAiModEnabled()) return;
         ModerationEndpoint.moderateText(message.getContent()).thenAcceptAsync(modResult -> {
-            if (!isFlaggedForServer(modResult, serverSettings)) return;
+            if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
 
             // log event if applicable
             User author = message.getUserAuthor().get();
-            if (serverSettings.isModLogEnabled() && canLogMessage(serverSettings, server)) {
-                logMessage(author, message, modResult, server.getTextChannelById(serverSettings.getModLogChannelID().get()).get());
+            if (serverSettings.isAiModEnabled() && canLogMessage(serverSettings, server)) {
+                logMessage(author, message, modResult, server.getTextChannelById(serverSettings.getAiLogChannelID().get()).get());
             }
 
             // // warn/mute user if applicable
@@ -45,7 +46,7 @@ public class AiMod {
         });
     }
 
-    public static boolean isFlaggedForServer(ModerationResult modResult, ServerSettings serverSettings) {
+    private static boolean isFlaggedForServer(ModerationResult modResult, ServerSettings serverSettings) {
         if (!modResult.flagged) return false;
         if (modResult.flags.hate && serverSettings.flagHate()) return true;
         if (modResult.flags.harassment && serverSettings.flagHarrassment()) return true;
@@ -53,6 +54,16 @@ public class AiMod {
         if (modResult.flags.sexual && serverSettings.flagSexual()) return true;
         if (modResult.flags.violence && serverSettings.flagViolence()) return true;
         return false; 
+    }
+
+    private static boolean isIgnoredChannel(ServerSettings serverSettings, long messageChannelID) {
+        List<Long> ignoredChannelIDs = serverSettings.getAiIgnoredChannels();
+        if (ignoredChannelIDs != null) {
+            for (Long ignoredID : ignoredChannelIDs) {
+                if (ignoredID == messageChannelID) return true;
+            }
+        }
+        return false;
     }
 
     // // <serverID, <userID, warnings>>
@@ -64,14 +75,14 @@ public class AiMod {
     // }
 
     private static boolean canLogMessage(ServerSettings serverSettings, Server server) {
-        if (!serverSettings.getModLogChannelID().isPresent()) return false;
-        long logChannelID = serverSettings.getModLogChannelID().get();
+        if (!serverSettings.getAiLogChannelID().isPresent()) return false;
+        long logChannelID = serverSettings.getAiLogChannelID().get();
         if (!server.getTextChannelById(logChannelID).isPresent()) return false;
         return true;
     }
 
-    private static void logMessage(User user, Message message, ModerationResult modResult, ServerTextChannel modlogChannel) {
-        modlogChannel.sendMessage(LogEmbed.aiModEmbed(user, message, modResult));
+    private static void logMessage(User user, Message message, ModerationResult modResult, ServerTextChannel aiLogChannel) {
+        aiLogChannel.sendMessage(LogEmbed.aiModEmbed(user, message, modResult));
     }
 
 }

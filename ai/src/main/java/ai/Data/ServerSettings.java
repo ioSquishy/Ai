@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import com.squareup.moshi.JsonDataException;
 
+import java.util.List;
 import java.util.Optional;
 
 import ai.Data.Database.DocumentUnavailableException;
@@ -101,6 +102,14 @@ public class ServerSettings {
     // ai mod
     public boolean isAiModEnabled() {
         return aiModSettings().aiModEnabled;
+    }
+
+    public Optional<Long> getAiLogChannelID() {
+        return Optional.ofNullable(aiModSettings().aiLogChannelID);
+    }
+
+    public List<Long> getAiIgnoredChannels() {
+        return aiModSettings().ignoredChannels;
     }
 
     public boolean flagHate() {

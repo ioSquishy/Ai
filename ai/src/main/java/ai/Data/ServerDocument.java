@@ -48,7 +48,8 @@ public class ServerDocument {
             protected AiModSettings aiModSettings = new AiModSettings();
             protected static class AiModSettings {
                 protected boolean aiModEnabled = false;
-                protected Long aiModLogChannelID = null;
+                protected Long aiLogChannelID = null;
+                protected List<Long> ignoredChannels = Collections.<Long>emptyList();
 
                 protected boolean flagHate = true;
                 protected boolean flagHarrassment = true;
