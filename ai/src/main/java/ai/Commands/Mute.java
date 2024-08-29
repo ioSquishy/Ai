@@ -36,7 +36,7 @@ public class Mute {
         return new SlashCommandBuilder()
             .setName("mute")
             .setDescription("Mute someone permanently or for a custom duration.")
-            .setDefaultEnabledForPermissions(PermissionType.MANAGE_MESSAGES)
+            .setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
             .addOption(new SlashCommandOptionBuilder()
                 .setName("User")
                 .setDescription("User to mute.")
