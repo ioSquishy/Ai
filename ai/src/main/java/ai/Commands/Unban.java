@@ -14,6 +14,7 @@ public class Unban {
             .setName("unban")
             .setDescription("Unban someone from the server.")
             .setDefaultEnabledForPermissions(PermissionType.BAN_MEMBERS)
+            .setEnabledInDms(false)
             .addOption(new SlashCommandOptionBuilder()
                 .setName("user")
                 .setDescription("User to unban. Can be user ID.")

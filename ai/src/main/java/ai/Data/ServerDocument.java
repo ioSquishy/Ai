@@ -51,6 +51,9 @@ public class ServerDocument {
                 protected Long aiLogChannelID = null;
                 protected List<Long> ignoredChannels = Collections.<Long>emptyList();
 
+                // protected boolean autoMuteEnabled = true;
+                // protected int autoMuteWarnThreshold = 3; // mutes user after 3 warnings
+
                 protected boolean flagHate = true;
                 protected boolean flagHarrassment = true;
                 protected boolean flagSelfHarm = true;

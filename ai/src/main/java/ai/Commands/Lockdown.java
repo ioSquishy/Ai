@@ -36,7 +36,8 @@ public class Lockdown  {
         return new SlashCommandBuilder()
             .setName("lockdown")
             .setDescription("Enable/Disable a lockdown.")
-            .setDefaultDisabled();
+            .setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
+            .setEnabledInDms(false);
     }
 
     private static String runSlashCmd(Server server, User author, ServerTextChannel logChannel) {

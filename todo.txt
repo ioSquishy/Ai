@@ -1,5 +1,4 @@
 + mute user if their messages get flagged 3 times in 1 minute (use task scheduler)
-
 + make a nicer embed that shows server settings after updating settings with settings command
 + create a helper method to see if modlog channel is present
 + purge until (message id) command

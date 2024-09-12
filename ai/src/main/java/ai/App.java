@@ -41,6 +41,7 @@ public class App implements Serializable {
                 BotInfo.createCommand(),
                 Mute.muteSlashCommand(),
                 Unban.unbanSlashCommand(),
+                Purge.createCommand(),
                 Lockdown.createCommand(),
                 SettingsCommand.createSettingsCommand()
             )
