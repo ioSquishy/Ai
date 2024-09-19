@@ -22,6 +22,7 @@ import ai.App;
 import ai.Constants.TaskSchedulerKeyPrefixs;
 import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
+import ai.Utility.InteractionException;
 import ai.Utility.LogEmbed;
 import ai.Utility.ReadableTime;
 import ai.Utility.TaskScheduler;
@@ -76,7 +77,7 @@ public class Mute {
                 .build());
     }
 
-    public SlashCommandBuilder unmuteCommand() {
+    public static SlashCommandBuilder unmuteCommand() {
         return new SlashCommandBuilder()
             .setName("unmute")
             .setDescription("Unmute someone.")
@@ -117,7 +118,7 @@ public class Mute {
             String errorResponse = "You do not have a valid mute role set.";
             interaction.createImmediateResponder().setContent(errorResponse).respond();
             return;
-        } catch (MuteException e) {
+        } catch (InteractionException e) {
             e.sendExceptionResponse(interaction);
             return;
         }
@@ -130,7 +131,7 @@ public class Mute {
         // check permissions
         try {
             hasPermission(moderator, mutedUser, muteRole, server);
-        } catch (MuteException e) {
+        } catch (InteractionException e) {
             e.sendExceptionResponse(interaction);
             return;
         }
@@ -201,45 +202,34 @@ public class Mute {
      * @return Returns false if any fail.
      * @throws DocumentUnavailableException If database is unaccessible and server is not in cache.
      */
-    private static boolean hasValidArguments(ServerSettings settings) throws MuteException {
+    private static boolean hasValidArguments(ServerSettings settings) throws InteractionException {
         //check if there is a muterole
         if (settings.getMuteRole().isEmpty()) { 
-            throw new MuteException("You do not have a mute role set!");
+            throw new InteractionException("You do not have a mute role set!");
         }
         // check if muterole is valid
         Role muteRole = settings.getMuteRole().orElse(null);
         if (muteRole == null) {
-            throw new MuteException("Invalid mute role!");
+            throw new InteractionException("Invalid mute role!");
         }
         // check if bot can manage the muterole
         if (!App.api.getYourself().canManageRole(muteRole)) {
-            throw new MuteException("I cannot manage that role!");
+            throw new InteractionException("I cannot manage that role!");
         }
         return true;
     }
 
-    private static boolean hasPermission(User moderator, User mutedUser, Role muteRole, Server server) throws MuteException {
+    private static boolean hasPermission(User moderator, User mutedUser, Role muteRole, Server server) throws InteractionException {
         if (!server.canManageRole(moderator, muteRole)) {
-            throw new MuteException(moderator.getMentionTag() + " cannot manage the role: " + muteRole.getMentionTag());
+            throw new InteractionException(moderator.getMentionTag() + " cannot manage the role: " + muteRole.getMentionTag());
         }
         if (!server.canTimeoutUser(moderator, mutedUser)) {
-            throw new MuteException(moderator.getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
+            throw new InteractionException(moderator.getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
         }
         if (!server.canYouTimeoutUser(mutedUser)) {
-            throw new MuteException(App.api.getYourself().getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
+            throw new InteractionException(App.api.getYourself().getMentionTag() + " cannot timeout the user: " + mutedUser.getMentionTag());
         }
         return true;
-    }
-    private static class MuteException extends Exception {
-        final String exceptionReason;
-        public MuteException(String reason) {
-            super(reason);
-            exceptionReason = reason;
-        }
-
-        public void sendExceptionResponse(InteractionBase interaction) {
-            interaction.createImmediateResponder().setContent(exceptionReason).setFlags(MessageFlag.SUPPRESS_NOTIFICATIONS, MessageFlag.EPHEMERAL).respond();
-        }
     }
 
     public static void handleUnmuteCommand(SlashCommandInteraction interaction) {

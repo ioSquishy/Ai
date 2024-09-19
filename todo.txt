@@ -1,5 +1,5 @@
 + mute user if their messages get flagged 3 times in 1 minute (use task scheduler)
-+ make a nicer embed that shows server settings after updating settings with settings command
 + create a helper method to see if modlog channel is present
-+ purge until (message id) command
++ make Lockdown command use files in Assets instead of imgur links
 - organize mute.java code better to be more clear
++ add a better logging system that adds exceptions to server document

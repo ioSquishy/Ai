@@ -1,29 +1,37 @@
 package ai.Utility;
 
 import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.MessageFlag;
 import org.javacord.api.entity.permission.Role;
-import org.javacord.api.interaction.InteractionBase;
+import org.javacord.api.entity.server.Server;
 
 public class PermissionsCheck {
-    public static boolean validate(TextChannel textChannel) throws InvalidPermissionsException {
-        return true;
+    public static boolean canSendMessages(TextChannel channel, boolean dmOwnerIfFalse) {
+        if (channel.canYouWrite()) {
+            return true;
+        } else {
+            if (dmOwnerIfFalse) {
+                channel.asServerChannel().get().getServer().getOwner().get().sendMessage("I cannot send messages in the channel: <#" + channel.getId() + ">!");
+            }
+            return false;
+        }
     }
 
-    public static boolean validate(Role role) throws InvalidPermissionsException {
-        return true;
+    public static boolean canReadAuditLog(Server server, boolean dmOwnerIfFalse) {
+        if (server.canYouViewAuditLog()) {
+            return true;
+        } else {
+            if (dmOwnerIfFalse) {
+                server.getOwner().get().sendMessage("I cannot read the audit log!");
+            }
+            return false;
+        }
     }
 
-    public static class InvalidPermissionsException extends Exception {
-        public final String exceptionReason;
+    public static boolean canDeleteMessages(TextChannel channel) {
+        return channel.canYouManageMessages();
+    }
 
-        public InvalidPermissionsException(String reason) {
-            super(reason);
-            exceptionReason = reason;
-        }
-
-        public void sendExceptionResponse(InteractionBase interaction) {
-            interaction.createImmediateResponder().setContent(exceptionReason).setFlags(MessageFlag.SUPPRESS_NOTIFICATIONS, MessageFlag.EPHEMERAL).respond();
-        }
+    public static boolean canManageRole(Server server, Role role) {
+        return server.canManageRole(server.getApi().getYourself(), role);
     }
 }

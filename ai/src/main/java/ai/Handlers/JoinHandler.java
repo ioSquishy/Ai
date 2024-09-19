@@ -76,8 +76,4 @@ public class JoinHandler {
             channel.sendMessage(getJoinMessage());
         });
     }
-
-    public void addRoles() {
-
-    }
 }

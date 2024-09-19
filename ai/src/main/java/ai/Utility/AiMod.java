@@ -95,5 +95,4 @@ public class AiMod {
     // private static void muteUser(User user) {
     //     //TODO
     // }
-
 }

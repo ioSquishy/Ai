@@ -107,10 +107,11 @@ public class SettingsCommand {
 
         for (int line = 0; line < oldSettingsLines.length; line++) {
             if (!oldSettingsLines[line].equals(newSettingsLines[line])) {
-                updates += newSettingsLines[line];
+                updates += newSettingsLines[line] + "\n";
             }
         }
 
+        updates = updates.stripTrailing();
         if (updates.endsWith(",")) updates = updates.substring(0, updates.length()-1);
 
         return new EmbedBuilder()
