@@ -6,7 +6,6 @@ import org.javacord.api.entity.auditlog.AuditLog;
 import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
 import org.javacord.api.entity.server.Server;
-import org.javacord.api.entity.user.User;
 import org.javacord.api.event.server.member.ServerMemberLeaveEvent;
 
 import ai.Data.Database.DocumentUnavailableException;
@@ -53,19 +52,13 @@ public class LeaveHandler {
         return true;
     }
 
-    private AuditLogEntry lastKickEntry;
-    private User lastKickedUser;
+    private AuditLogEntry lastAuditEntry;
     private boolean wasKicked() {
         try {
-            AuditLog auditLog = leaveEvent.getServer().getAuditLog(1, AuditLogActionType.MEMBER_KICK).get(3, TimeUnit.SECONDS);
+            AuditLog auditLog = leaveEvent.getServer().getAuditLog(1).get(2, TimeUnit.SECONDS);
             if (auditLog.getEntries().isEmpty()) return false;
-            lastKickEntry = auditLog.getEntries().get(0);
-            lastKickedUser = lastKickEntry.getTarget().get().asUser().get(3, TimeUnit.SECONDS);
-            if (leaveEvent.getUser().getId() == lastKickedUser.getId()) {
-                return true;
-            } else {
-                return false;
-            }
+            lastAuditEntry = auditLog.getEntries().get(0);
+            return lastAuditEntry.getType() == AuditLogActionType.MEMBER_KICK;
         } catch (Exception e) {
             return false;
         }
@@ -75,7 +68,7 @@ public class LeaveHandler {
     private void logKick() {
         serverSettings.getModLogChannel().ifPresent(logChannel -> {
             logChannel.sendMessage(LogEmbed.getEmbed(
-                EmbedType.Kick, lastKickedUser, lastKickEntry.getUser().join(), lastKickEntry.getReason().orElse("")
+                EmbedType.Kick, lastAuditEntry.getTarget().get().asUser().join(), lastAuditEntry.getUser().join(), lastAuditEntry.getReason().orElse("")
             ));
         });
     }

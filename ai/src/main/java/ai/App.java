@@ -30,8 +30,8 @@ public class App implements Serializable {
 
     public static transient final long startEpoch = Instant.now().getEpochSecond();
     public static transient final String version = "2";
+    public static transient final long botID = App.api.getYourself().getId();
     public static void main(String[] args) {
-        System.out.println("Ai is online!");
         Database.initMongoDB();
 
         // create/update slash commands
@@ -40,7 +40,9 @@ public class App implements Serializable {
                 Ping.createCommand(),
                 BotInfo.createCommand(),
                 Mute.muteSlashCommand(),
+                Mute.unmuteCommand(),
                 Unban.unbanSlashCommand(),
+                Purge.createCommand(),
                 Lockdown.createCommand(),
                 SettingsCommand.createSettingsCommand()
             )

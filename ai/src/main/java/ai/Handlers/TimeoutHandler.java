@@ -11,40 +11,38 @@ import ai.Data.Database.DocumentUnavailableException;
 import ai.App;
 import ai.Data.ServerSettings;
 import ai.Utility.LogEmbed;
+import ai.Utility.PermissionsCheck;
 import ai.Utility.LogEmbed.EmbedType;
 import ai.Utility.ReadableTime;
 
 public class TimeoutHandler {
-    private static final long botID = App.api.getYourself().getId();
+    
     public static void handleTimeoutEvent(UserChangeTimeoutEvent event) {
         try {
             Server server = event.getServer();
 
             ServerSettings serverSettings = new ServerSettings(server);
-            if (isLogMutesEnabled(serverSettings) && canLogMutes(serverSettings, server)) {
+            if (isLogMutesEnabled(serverSettings) && PermissionsCheck.canReadAuditLog(server, true) && PermissionsCheck.canSendMessages(serverSettings.getModLogChannel().get(), true)) {
+
                 AuditLogEntry lastTimeout = event.getServer().getAuditLog(1, AuditLogActionType.MEMBER_UPDATE).join().getEntries().get(0);
                 if (!wasMutedByBot(lastTimeout)) { // if muted by bot then it was logged already with mute command
                     logTimeout(event, serverSettings, lastTimeout);
                 }
             }
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
     private static boolean isLogMutesEnabled(ServerSettings serverSettings) {
         if (!serverSettings.isLogMuteEnabled()) return false;
         if (!serverSettings.isModLogEnabled()) return false;
-        return true;
-    }
-
-    private static boolean canLogMutes(ServerSettings serverSettings, Server server) {
         if (!serverSettings.getModLogChannel().isPresent()) return false;
         return true;
     }
 
     private static boolean wasMutedByBot(AuditLogEntry lastTimeout) {
-        return lastTimeout.getUser().join().getId() == botID;
+        return lastTimeout.getUser().join().getId() == App.botID;
     }
 
     private static void logTimeout(UserChangeTimeoutEvent event, ServerSettings serverSettings, AuditLogEntry lastTimeout) {

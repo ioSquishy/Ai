@@ -15,7 +15,9 @@ import org.javacord.api.interaction.SlashCommandInteraction;
 import ai.Data.ServerSettings;
 import ai.Data.Database.DocumentUnavailableException;
 
-
+/**
+ * Locks down the server by setting the @everyone roles Send Message Permission to disabled.
+ */
 public class Lockdown  {
 
     public static void handleCommand(SlashCommandInteraction interaction) {
@@ -36,7 +38,8 @@ public class Lockdown  {
         return new SlashCommandBuilder()
             .setName("lockdown")
             .setDescription("Enable/Disable a lockdown.")
-            .setDefaultDisabled();
+            .setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
+            .setEnabledInDms(false);
     }
 
     private static String runSlashCmd(Server server, User author, ServerTextChannel logChannel) {
@@ -56,8 +59,6 @@ public class Lockdown  {
             } else {
                 logChannel.sendMessage(getLockdownDisabledEmbed(author));
             }
-        } else {
-
         }
         return initialized ? "https://imgur.com/hIaMyPd.gif" : "https://imgur.com/O99TyXi.gif";
     }

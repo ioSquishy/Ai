@@ -13,7 +13,7 @@ public class BotInfo {
             .setDescription("Get information about the bot.");
     }
     
-    public static void HandleCommand(SlashCommandInteraction interaction) {
+    public static void handleCommand(SlashCommandInteraction interaction) {
         String dbStatus = Database.mongoOK ? "up since: " : "down since: ";
         interaction.createImmediateResponder().setContent(
             "Version: `" + App.version + "`" + 

@@ -5,6 +5,7 @@ import java.awt.Color;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
+import org.javacord.api.interaction.InteractionBase;
 
 import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
 
@@ -71,7 +72,7 @@ public class LogEmbed {
             .setColor(color)
             .setDescription(
                 "**Offender:** " + offender.getName() + " " + offender.getMentionTag() + "\n" +
-                "**Reason:** " + reason + "\n" +
+                "**Reason:** " + reason.trim() + "\n" +
                 "**Moderator:** " +  moderator.getName() + " " + moderator.getMentionTag())
             .setFooter("ID: " + offender.getIdAsString())
             .setTimestampToNow();
@@ -87,7 +88,7 @@ public class LogEmbed {
             .setDescription(
                 "**Offender:** " + offender.getName() + " " + offender.getMentionTag() + 
                 "\n**Duration:** " + duration +
-                "\n**Reason:** " + reason + 
+                "\n**Reason:** " + reason.trim() + 
                 "\n**Moderator:** " + moderator.getName() + " " + moderator.getMentionTag()
                 )
             .setFooter("ID: " + offender.getIdAsString())
@@ -106,6 +107,31 @@ public class LogEmbed {
                 )
             .setFooter("ID: " + offender.getIdAsString())
             .setTimestampToNow();
+    }
+
+    /**
+     * Returns moderator information that should be appended to audit log reasons on moderation actions.
+     * @param interaction Slash command interaction
+     * @return \nModerator: (name) (user id)
+     */
+    public static String getModeratorAppendage(InteractionBase interaction) {
+        return "\nModerator: " + interaction.getUser().getName() + " " + interaction.getUser().getId();
+    }
+    
+    /**
+     * Separates moderator userID from audit log reason that would've been added with getModeratorAppendage()
+     * @param auditReason Audit log reason containing moderator appendage.
+     * @return {reason, moderatorID}
+     */
+    public static String[] separateReasonAndModerator(String auditReason) {
+        String[] splitAuditReason = auditReason.split("\n");
+
+        String rawModerator = splitAuditReason[splitAuditReason.length-1];
+        String reason = auditReason.substring(0, (auditReason.length()-rawModerator.length()));
+
+        String moderatorID = rawModerator.split(" ")[2];
+
+        return new String[]{reason, moderatorID};
     }
     
 }

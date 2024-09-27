@@ -6,12 +6,13 @@ import java.util.concurrent.TimeoutException;
 
 import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
-import org.javacord.api.entity.server.Ban;
 import org.javacord.api.entity.server.Server;
+import org.javacord.api.entity.user.User;
 import org.javacord.api.event.server.member.ServerMemberBanEvent;
 import org.javacord.api.event.server.member.ServerMemberUnbanEvent;
 
 import ai.Data.Database.DocumentUnavailableException;
+import ai.App;
 import ai.Data.ServerSettings;
 import ai.Utility.LogEmbed;
 import ai.Utility.LogEmbed.EmbedType;
@@ -25,7 +26,7 @@ public class BanHandler {
             if (isLogBansEnabled(serverSettings) && canLogBans(serverSettings, server)) {
                 AuditLogEntry lastBan = banEvent.getServer().getAuditLog(1, AuditLogActionType.MEMBER_BAN_ADD).join().getEntries().get(0);
                 if (!isBeemoBan(lastBan)) {
-                    logBan(serverSettings, banEvent, lastBan);
+                    logBan(serverSettings, lastBan);
                 }
             }
         } catch (DocumentUnavailableException e) {
@@ -71,25 +72,37 @@ public class BanHandler {
         }
     }
 
-    private static void logBan(ServerSettings serverSettings, ServerMemberBanEvent banEvent, AuditLogEntry lastBanEntry) {
-        try {
-            Ban ban = banEvent.requestBan().get();
-            serverSettings.getModLogChannel().ifPresent(channel -> {
-                channel.sendMessage(LogEmbed.getEmbed(EmbedType.Ban, ban.getUser(), banEvent.getUser(), ban.getReason().orElse("")));
-            });
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+    private static void logBan(ServerSettings serverSettings, AuditLogEntry lastBanEntry) {
+        serverSettings.getModLogChannel().ifPresent(channel -> {
+            try {
+                channel.sendMessage(LogEmbed.getEmbed(EmbedType.Ban, lastBanEntry.getTarget().get().asUser().get(), lastBanEntry.getUser().get(), lastBanEntry.getReason().orElse("")));
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private static void logUnban(ServerSettings serverSettings, ServerMemberUnbanEvent unbanEvent, AuditLogEntry lastUnbanEntry) {
         serverSettings.getModLogChannel().ifPresent(channel -> {
             try {
+                String reason = lastUnbanEntry.getReason().orElse("");
+                User moderator = lastUnbanEntry.getUser().get(3, TimeUnit.SECONDS);
+
+                if (!reason.isEmpty() && App.botID == moderator.getId()) {
+                    String[] reasonAndModerator = LogEmbed.separateReasonAndModerator(reason);
+                    reason = reasonAndModerator[0];
+                    try {
+                        moderator = unbanEvent.getApi().getUserById(reasonAndModerator[1]).get(3, TimeUnit.SECONDS);
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 channel.sendMessage(LogEmbed.getEmbed(
                     EmbedType.Unban,
                     lastUnbanEntry.getTarget().get().asUser().get(3, TimeUnit.SECONDS),
-                    lastUnbanEntry.getUser().get(3, TimeUnit.SECONDS),
-                    lastUnbanEntry.getReason().orElse("")));
+                    moderator,
+                    reason));
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 e.printStackTrace();
             }

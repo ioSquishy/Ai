@@ -8,6 +8,7 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 
 import ai.Data.Database.DocumentUnavailableException;
+import ai.Constants.TaskSchedulerKeyPrefixs;
 import ai.API.OpenAI.ModerationEndpoint;
 import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
 import ai.Data.ServerSettings;
@@ -34,7 +35,7 @@ public class AiMod {
 
             // log event if applicable
             User author = message.getUserAuthor().get();
-            if (serverSettings.isAiModEnabled() && canLogMessage(serverSettings, server)) {
+            if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
                 logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
             }
 
@@ -62,12 +63,6 @@ public class AiMod {
             }
         }
         return false;
-    }
-
-    private static boolean canLogMessage(ServerSettings serverSettings, Server server) {
-        if (!serverSettings.getAiLogChannel().isPresent()) return false;
-        if (!serverSettings.getAiLogChannel().isPresent()) return false;
-        return true;
     }
 
     private static void logMessage(User user, Message message, ModerationResult modResult, ServerTextChannel aiLogChannel) {

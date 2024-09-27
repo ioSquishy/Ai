@@ -1,6 +1,7 @@
 package ai.Commands;
 
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,7 +73,7 @@ public class SettingsCommand {
     }
 
     public static void handleSettingsModalSubmit(ModalInteraction interaction) {
-        String settingsJson = interaction.getTextInputValueByCustomId(CustomID.SETTINGS_JSON).get();
+        String newSettingsJson = interaction.getTextInputValueByCustomId(CustomID.SETTINGS_JSON).get();
         String joinMsg = interaction.getTextInputValueByCustomId(CustomID.JOIN_MESSAGE).get();
         InteractionImmediateResponseBuilder responseMessage = interaction.createImmediateResponder();
         
@@ -80,12 +81,13 @@ public class SettingsCommand {
             // set join message and update settings
             ServerSettings settings = new ServerSettings(interaction.getServer().get());
             settings.setJoinMessage(joinMsg);
-            settings.updateSettings(settingsJson);
+            String oldSettingsJson = settings.getSettingsJSON();
+            settings.updateSettings(newSettingsJson);
             responseMessage.setContent("Settings updated.");
 
              // send message with new settings and join message
             responseMessage
-                .addEmbed(getSettingsEmbed(settings))
+                .addEmbed(getUpdatedSettingsEmbed(oldSettingsJson, newSettingsJson))
                 .addEmbed(getJoinMessageEmbed(settings));
         } catch (DocumentUnavailableException e) {
             e.printStackTrace();
@@ -98,29 +100,31 @@ public class SettingsCommand {
         }
     }
 
-    private static EmbedBuilder getSettingsEmbed(ServerSettings settings) throws DocumentUnavailableException {
-        return new EmbedBuilder()
-            .setTitle("Settings")
-            .setDescription(
-                settings.getSettingsJSON()
-            );
-    }
+    private static EmbedBuilder getUpdatedSettingsEmbed(String oldSettings, String newSettings) throws DocumentUnavailableException {
+        String[] oldSettingsLines = oldSettings.split("\n");
+        String[] newSettingsLines = newSettings.split("\n");
+        String updates = "";
 
-    private static String formatJoinRoles(List<Long> joinRoleIDs) {
-        String roles = "";
-        for (Long roleID : joinRoleIDs) {
-            roles += "<@&" + roleID + ">, ";
+        for (int line = 0; line < oldSettingsLines.length; line++) {
+            if (!oldSettingsLines[line].equals(newSettingsLines[line])) {
+                updates += newSettingsLines[line] + "\n";
+            }
         }
-        if (!roles.isEmpty()) {
-            roles.substring(0, roles.length()-2);
-        }
-        return roles;
+
+        updates = updates.stripTrailing();
+        if (updates.endsWith(",")) updates = updates.substring(0, updates.length()-1);
+
+        return new EmbedBuilder()
+            .setTitle("Updated Settings")
+            .setColor(Color.YELLOW)
+            .setDescription(updates);
     }
 
     private static EmbedBuilder getJoinMessageEmbed(ServerSettings settings) throws DocumentUnavailableException {
         JoinHandler joinHandler = new JoinHandler(JoinHandler.testJoinEvent, settings);
         return new EmbedBuilder()
             .setTitle("Join Message Example")
+            .setColor(Color.BLUE)
             .setDescription(joinHandler.getJoinMessage());
     }
 
