@@ -52,13 +52,15 @@ public class ModerationEndpoint {
             public final boolean selfHarm;
             public final boolean sexual;
             public final boolean violence;
+            public final boolean illicit;
             
-            public Flags(boolean hate, boolean harassment, boolean selfHarm, boolean sexual, boolean violence) {
+            public Flags(boolean hate, boolean harassment, boolean selfHarm, boolean sexual, boolean violence, boolean illicit) {
                 this.hate = hate;
                 this.harassment = harassment;
                 this.selfHarm = selfHarm;
                 this.sexual = sexual;
                 this.violence = violence;
+                this.illicit = illicit;
             }
 
             @Override
@@ -69,6 +71,7 @@ public class ModerationEndpoint {
                 if (selfHarm) reasons += "self-harm, ";
                 if (sexual) reasons += "sexual, ";
                 if (violence) reasons += "violence, ";
+                if (illicit) reasons += "illicit, ";
                 return reasons.isEmpty() ? "" : reasons.substring(0, reasons.length()-2);
             }
         }
@@ -79,7 +82,7 @@ public class ModerationEndpoint {
             this.flagged = modObject.results.get(0).flagged;
 
             ModerationObjectCategories categories = modObject.results.get(0).categories;
-            this.flags = new Flags(categories.hate, categories.harassment, categories.selfharm, categories.sexual, categories.violence);
+            this.flags = new Flags(categories.hate, categories.harassment, categories.selfharm, categories.sexual, categories.violence, categories.illicit);
         }
 
         public String toString() {
@@ -103,6 +106,7 @@ public class ModerationEndpoint {
         public @Json(name = "self-harm") boolean selfharm;
         public boolean sexual;
         public boolean violence;
+        public boolean illicit;
 
         @Override
         public String toString() {
@@ -110,7 +114,8 @@ public class ModerationEndpoint {
                 "\nharassment: " + harassment +
                 "\nself-harm: " + selfharm +
                 "\nsexual: " + sexual + 
-                "\nviolence: " + violence;
+                "\nviolence: " + violence +
+                "\nillicit: " + illicit;
         }
     }
 }

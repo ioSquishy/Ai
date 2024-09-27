@@ -1,10 +1,6 @@
 package ai.Utility;
 
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.Message;
@@ -12,8 +8,6 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 
 import ai.Data.Database.DocumentUnavailableException;
-import ai.Constants;
-import ai.Constants.TaskSchedulerKeyPrefixs;
 import ai.API.OpenAI.ModerationEndpoint;
 import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
 import ai.Data.ServerSettings;
@@ -56,6 +50,7 @@ public class AiMod {
         if (modResult.flags.selfHarm && serverSettings.flagSelfHarm()) return true;
         if (modResult.flags.sexual && serverSettings.flagSexual()) return true;
         if (modResult.flags.violence && serverSettings.flagViolence()) return true;
+        if (modResult.flags.illicit && serverSettings.flagIllicit()) return true;
         return false; 
     }
 
@@ -78,29 +73,5 @@ public class AiMod {
     private static void logMessage(User user, Message message, ModerationResult modResult, ServerTextChannel aiLogChannel) {
         aiLogChannel.sendMessage(LogEmbed.aiModEmbed(user, message, modResult));
     }
-
-
-    // <serverID, <userID, warnings>>
-    // private static HashMap<Long, HashMap<Long, Integer>> serverWarnings = new HashMap<Long, HashMap<Long, Integer>>();
-
-    // private static void warnUser(User user, Server server) {
-    //     HashMap<Long, Integer> userWarnings = serverWarnings.getOrDefault(server.getId(), new HashMap<Long, Integer>(Map.of(user.getId(), 0)));
-    //     userWarnings.put(user.getId(), userWarnings.get(user.getId())+1);
-    //     TaskScheduler.scheduleTask(TaskSchedulerKeyPrefixs.AI_WARN_REMOVE+user.getId()+Instant.now().toEpochMilli(), removeWarning(server.getId(), user.getId()), 2, TimeUnit.SECONDS);
-    //     if (userWarnings.get(user.getId()) >= 3) {
-    //         muteUser(user);
-    //     }
-    // }
-
-    // private static Runnable removeWarning(long serverID, long userID) {
-    //     return () -> {
-    //         HashMap<Long, Integer> userWarnings = serverWarnings.get(serverID);
-    //         userWarnings.put(userID, userWarnings.get(userID)-1);
-    //     };
-    // }
-
-    // private static void muteUser(User user) {
-    //     //TODO
-    // }
 
 }

@@ -152,4 +152,8 @@ public class ServerSettings {
         return aiModSettings().flagViolence;
     }
 
+    public boolean flagIllicit() {
+        return aiModSettings().flagIllicit;
+    }
+
 }

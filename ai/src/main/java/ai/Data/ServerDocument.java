@@ -50,12 +50,14 @@ public class ServerDocument {
                 protected boolean aiModEnabled = false;
                 protected Long aiLogChannelID = null;
                 protected List<Long> ignoredChannels = Collections.<Long>emptyList();
+                protected boolean checkImages = true;
 
                 protected boolean flagHate = true;
                 protected boolean flagHarrassment = true;
                 protected boolean flagSelfHarm = true;
                 protected boolean flagSexual = true;
                 protected boolean flagViolence = true;
+                protected boolean flagIllicit = true;
             }
         }
 
