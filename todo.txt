@@ -1,4 +1,3 @@
-+ mute user if their messages get flagged 3 times in 1 minute (use task scheduler)
 + create a helper method to see if modlog channel is present
 + make Lockdown command use files in Assets instead of imgur links
 - organize mute.java code better to be more clear

@@ -95,15 +95,15 @@ public class LogEmbed {
             .setTimestampToNow();
     }
 
-    public static EmbedBuilder aiModEmbed(User offender, Message message, ModerationResult modResult) {
+    public static EmbedBuilder aiModEmbed(User offender, String messageLink, ModerationResult modResult) {
         return new EmbedBuilder()
             .setTitle("AiMod: Message Flagged")
-            .setUrl(message.getLink().toString())
+            .setUrl(messageLink)
             .setColor(Color.YELLOW)
             .setDescription(
                 "**Offender:** " + offender.getName() + " " + offender.getMentionTag() + 
                 "\n**Flag Reasons:** " + modResult.flags.toString() + 
-                "\n**Message:** \n" + modResult.inputText
+                "\n**Message Text:** \n" + modResult.inputText
                 )
             .setFooter("ID: " + offender.getIdAsString())
             .setTimestampToNow();

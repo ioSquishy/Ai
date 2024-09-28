@@ -1,9 +1,14 @@
 package ai.Utility;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.Message;
+import org.javacord.api.entity.message.MessageAttachment;
+import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 
@@ -28,20 +33,31 @@ public class AiMod {
             return;
         }
 
-        // if aimod is enabled check message
+        // check if aimod is enabled
         if (!serverSettings.isAiModEnabled()) return;
-        ModerationEndpoint.moderateText(message.getContent()).thenAcceptAsync(modResult -> {
-            if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
 
-            // log event if applicable
-            User author = message.getUserAuthor().get();
-            if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
-                logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
-            }
-
-            // // warn/mute user if applicable
-            // warnUser(author, server);
-        });
+        // if message has attachments and checking images is enable
+        if (serverSettings.isAiModImageCheckEnabled() && !message.getAttachments().isEmpty()) {
+            ModerationEndpoint.moderateTextAndImages(message.getContent(), getAttachmentURLs(message.getAttachments())).thenAcceptAsync(modResult -> {
+                if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
+    
+                // log event if applicable
+                User author = message.getUserAuthor().get();
+                if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
+                    logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
+                }
+            });
+        } else {
+            ModerationEndpoint.moderateText(message.getContent()).thenAcceptAsync(modResult -> {
+                if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
+    
+                // log event if applicable
+                User author = message.getUserAuthor().get();
+                if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
+                    logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
+                }
+            });
+        }
     }
 
     private static boolean isFlaggedForServer(ModerationResult modResult, ServerSettings serverSettings) {
@@ -55,6 +71,10 @@ public class AiMod {
         return false; 
     }
 
+    private static String[] getAttachmentURLs(List<MessageAttachment> messageAttachments) {
+        return messageAttachments.stream().map(attachment -> attachment.getUrl().toString()).toArray(String[]::new);
+    }
+
     private static boolean isIgnoredChannel(ServerSettings serverSettings, long messageChannelID) {
         List<Long> ignoredChannelIDs = serverSettings.getAiIgnoredChannels();
         if (ignoredChannelIDs != null) {
@@ -66,7 +86,7 @@ public class AiMod {
     }
 
     private static void logMessage(User user, Message message, ModerationResult modResult, ServerTextChannel aiLogChannel) {
-        aiLogChannel.sendMessage(LogEmbed.aiModEmbed(user, message, modResult));
+        aiLogChannel.sendMessage(LogEmbed.aiModEmbed(user, message.getLink().toString(), modResult));
     }
 
 }

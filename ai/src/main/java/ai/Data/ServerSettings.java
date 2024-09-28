@@ -124,6 +124,10 @@ public class ServerSettings {
         return aiModSettings().aiModEnabled;
     }
 
+    public boolean isAiModImageCheckEnabled() {
+        return aiModSettings().checkImages;
+    }
+
     public Optional<ServerTextChannel> getAiLogChannel() {
         return getOptionalTextChannel(aiModSettings().aiLogChannelID);
     }
