@@ -38,7 +38,18 @@ public class AiMod {
 
         // if message has attachments and checking images is enable
         if (serverSettings.isAiModImageCheckEnabled() && !message.getAttachments().isEmpty()) {
-            ModerationEndpoint.moderateTextAndImages(message.getContent(), getAttachmentURLs(message.getAttachments())).thenAcceptAsync(modResult -> {
+            /// will use this in the future when open-ai makes it so that if at least one attachment is flagged, the modResult will be true
+            // ModerationEndpoint.moderateTextAndImages(message.getContent(), getAttachmentURLs(message.getAttachments())).thenAcceptAsync(modResult -> {
+            //     if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
+    
+            //     // log event if applicable
+            //     User author = message.getUserAuthor().get();
+            //     if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
+            //         logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
+            //     }
+            // });
+            /// for now, submit each attachment one at a time
+            ModerationEndpoint.moderateText(message.getContent()).thenAcceptAsync(modResult -> {
                 if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
     
                 // log event if applicable
@@ -47,6 +58,17 @@ public class AiMod {
                     logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
                 }
             });
+            for (String imageURL : getAttachmentURLs(message.getAttachments())) {
+                ModerationEndpoint.moderateTextAndImages(null, new String[]{imageURL}).thenAcceptAsync(modResult -> {
+                    if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
+        
+                    // log event if applicable
+                    User author = message.getUserAuthor().get();
+                    if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
+                        logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
+                    }
+                });
+            }
         } else {
             ModerationEndpoint.moderateText(message.getContent()).thenAcceptAsync(modResult -> {
                 if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;

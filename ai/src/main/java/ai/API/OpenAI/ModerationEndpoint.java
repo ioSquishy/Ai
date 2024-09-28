@@ -53,6 +53,13 @@ public class ModerationEndpoint {
         });
     }
 
+    /**
+     * Moderates text and multiple images.
+     * Note: Currently, moderation result will return FALSE if at least one image is sfw so ideally, submit each image to the API separately.
+     * @param text
+     * @param imageURLs
+     * @return
+     */
     public static CompletableFuture<ModerationResult> moderateTextAndImages(String text, String[] imageURLs) {
         return CompletableFuture.supplyAsync(() -> {
             try {
