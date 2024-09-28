@@ -32,6 +32,7 @@ public class ModerationEndpoint {
         requestBody.addInput(RequestBodyInput.createImageInput(imageURLs));
 
         String requestBodyJson =requestBodyAdapter.toJson(requestBody);
+        System.out.println(requestBodyJson);
         return Http.createRequest(Http.POST(moderationEndpoint, OpenaiApi.headers, requestBodyJson));
     }
 
@@ -55,7 +56,6 @@ public class ModerationEndpoint {
 
     /**
      * Moderates text and multiple images.
-     * Note: Currently, moderation result will return FALSE if at least one image is sfw so ideally, submit each image to the API separately.
      * @param text
      * @param imageURLs
      * @return
@@ -183,6 +183,7 @@ public class ModerationEndpoint {
                 for (int i = 0; i < imageURLs.length; i++) {
                     imageUrlMap.put("url", imageURLs[i]);
                 }
+                // TODO url is constantly being overried because its a map with unique keys duh
                 this.image_url = imageUrlMap;
             }
         }
