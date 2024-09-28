@@ -1,6 +1,7 @@
 package ai.Utility;
 
 import java.awt.Color;
+import java.util.Optional;
 
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
@@ -95,8 +96,8 @@ public class LogEmbed {
             .setTimestampToNow();
     }
 
-    public static EmbedBuilder aiModEmbed(User offender, String messageLink, ModerationResult modResult) {
-        return new EmbedBuilder()
+    public static EmbedBuilder aiModEmbed(User offender, String messageLink, Optional<String[]> imageURLs, ModerationResult modResult) {
+        EmbedBuilder embed = new EmbedBuilder()
             .setTitle("AiMod: Message Flagged")
             .setUrl(messageLink)
             .setColor(Color.YELLOW)
@@ -107,6 +108,12 @@ public class LogEmbed {
                 )
             .setFooter("ID: " + offender.getIdAsString())
             .setTimestampToNow();
+        if (imageURLs.isPresent()) {
+            for (String imageURL : imageURLs.get()) {
+                embed.addField("Flagged Attachment", imageURL);
+            }
+        }
+        return embed;
     }
 
     /**

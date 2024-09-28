@@ -2,7 +2,7 @@ package ai.API.OpenAI;
 
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -26,15 +26,27 @@ public class ModerationEndpoint {
         return Http.createRequest(Http.POST(moderationEndpoint, OpenaiApi.headers, requestBodyJson));
     }
 
-    private static Callable<HttpResponse<String>> createModerationRequest(String text, String[] imageURLs) {
+    private static Callable<HttpResponse<String>> createModerationRequest(String text, String imageURL) {
         RequestBody requestBody = new RequestBody();
-        requestBody.addInput(RequestBodyInput.createTextInput(text));
-        requestBody.addInput(RequestBodyInput.createImageInput(imageURLs));
+        requestBody.addInput(RequestBodyInput.createTextInput(text)); // add text input
+        requestBody.addInput(RequestBodyInput.createImageInput(imageURL)); // add image input
 
-        String requestBodyJson =requestBodyAdapter.toJson(requestBody);
-        System.out.println(requestBodyJson);
+        String requestBodyJson = requestBodyAdapter.toJson(requestBody);
         return Http.createRequest(Http.POST(moderationEndpoint, OpenaiApi.headers, requestBodyJson));
     }
+
+    /// openai has a limit of 1 image per request, saving this for the future in case multiple can be submitted in the future
+    // private static Callable<HttpResponse<String>> createModerationRequest(String text, String[] imageURLs) {
+    //     RequestBody requestBody = new RequestBody();
+    //     requestBody.addInput(RequestBodyInput.createTextInput(text)); // add text input
+    //     for (String imageURL : imageURLs) { // add image inputs
+    //         requestBody.addInput(RequestBodyInput.createImageInput(imageURL));
+    //     }
+
+    //     String requestBodyJson = requestBodyAdapter.toJson(requestBody);
+    //     System.out.println(requestBodyJson);
+    //     return Http.createRequest(Http.POST(moderationEndpoint, OpenaiApi.headers, requestBodyJson));
+    // }
 
     public static CompletableFuture<ModerationResult> moderateText(String text) {
         return CompletableFuture.supplyAsync(() -> {
@@ -54,29 +66,48 @@ public class ModerationEndpoint {
         });
     }
 
-    /**
-     * Moderates text and multiple images.
-     * @param text
-     * @param imageURLs
-     * @return
-     */
-    public static CompletableFuture<ModerationResult> moderateTextAndImages(String text, String[] imageURLs) {
+    public static CompletableFuture<ModerationResult> moderateTextAndImage(String text, String imageURL) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 // verify request success
-                HttpResponse<String> apiResponse = createModerationRequest(text, imageURLs).call();
+                HttpResponse<String> apiResponse = createModerationRequest(text, imageURL).call();
                 if (apiResponse.statusCode() != 200) {
                     throw new Exception(apiResponse.body());
                 }
     
                 // System.out.println(apiResponse.body());
-                return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, imageURLs);
+                return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, new String[] {imageURL});
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
         });
     }
+
+    /// openai has a limit of 1 image per request, saving this for the future in case multiple can be submitted in the future
+    // /**
+    //  * Moderates text and multiple images.
+    //  * @param text
+    //  * @param imageURLs
+    //  * @return
+    //  */
+    // public static CompletableFuture<ModerationResult> moderateTextAndImages(String text, String[] imageURLs) {
+    //     return CompletableFuture.supplyAsync(() -> {
+    //         try {
+    //             // verify request success
+    //             HttpResponse<String> apiResponse = createModerationRequest(text, imageURLs).call();
+    //             if (apiResponse.statusCode() != 200) {
+    //                 throw new Exception(apiResponse.body());
+    //             }
+    
+    //             // System.out.println(apiResponse.body());
+    //             return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, imageURLs);
+    //         } catch (Exception e) {
+    //             e.printStackTrace();
+    //             throw new RuntimeException(e);
+    //         }
+    //     });
+    // }
 
     public static class ModerationResult {
         public final String id;
@@ -124,12 +155,50 @@ public class ModerationEndpoint {
             this.flags = new Flags(categories.hate, categories.harassment, categories.selfharm, categories.sexual, categories.violence, categories.illicit);
         }
 
-        public String getInputImageURLs() {
-            String result = "";
-            for (int i = 0; i < inputImageURLs.length; i++) {
-                result += inputImageURLs[i] + "\n";
+        private ModerationResult(String id, String inputText, String[] inputImageURLs, boolean flagged, Flags flags) {
+            this.id = id;
+            this.inputText = inputText;
+            this.inputImageURLs = inputImageURLs;
+            this.flagged = flagged;
+            this.flags = flags;
+        }
+
+        /**
+         * Merges multiple moderation results to override each other with preference for 'true' flags
+         * @param results
+         * @return one composite ModerationResult
+         */
+        public static ModerationResult mergeResults(ModerationResult... results) {
+            String id = "";
+            String inputText = "";
+            ArrayList<String> inputImageURLs = new ArrayList<String>();
+            boolean flagged = false;
+            boolean hate = false;
+            boolean harassment = false;
+            boolean selfHarm = false;
+            boolean sexual = false;
+            boolean violence = false;
+            boolean illicit = false;
+
+            for (ModerationResult result : results) {
+                id += result.id + " ";
+                inputText += result.inputText + "\n";
+                if (result.inputImageURLs != null) {
+                    inputImageURLs.addAll(Arrays.asList(result.inputImageURLs));
+                }
+                flagged = result.flagged ? true : flagged;
+                hate = result.flags.hate ? true : hate;
+                harassment = result.flags.harassment ? true : harassment;
+                selfHarm = result.flags.selfHarm ? true : selfHarm;
+                sexual = result.flags.sexual ? true : sexual;
+                violence = result.flags.violence ? true : violence;
+                illicit = result.flags.illicit ? true : illicit;
             }
-            return result.stripTrailing();
+
+            id = id.strip();
+            inputText = inputText.strip();
+            Flags flags = new Flags(hate, harassment, selfHarm, sexual, violence, illicit);
+            return new ModerationResult(id, inputText, inputImageURLs.toArray(String[]::new), flagged, flags);
         }
 
         public String toString() {
@@ -164,28 +233,20 @@ public class ModerationEndpoint {
             return new RequestBodyInput("text", text, null);
         }
 
-        public static RequestBodyInput createImageInput(String[] imageURLs) {
-            return new RequestBodyInput("image_url", null, imageURLs);
+        public static RequestBodyInput createImageInput(String imageURL) {
+            return new RequestBodyInput("image_url", null, imageURL);
         }
 
         /**
          * Creates an input for the RequestBody class
          * @param type can be either "text" or "image_url"
          * @param text text to be moderated if type is "text"
-         * @param imageURLs images to be moderated if type is "image_url"
+         * @param imageURLs image to be moderated if type is "image_url"
          */
-        private RequestBodyInput(String type, String text, String[] imageURLs) {
+        private RequestBodyInput(String type, String text, String imageURL) {
             this.type = type;
             this.text = (text != null && !text.isBlank()) ? text : null;
-
-            if (imageURLs != null && imageURLs.length > 0) {
-                Map<String, String> imageUrlMap = new HashMap<String, String>();
-                for (int i = 0; i < imageURLs.length; i++) {
-                    imageUrlMap.put("url", imageURLs[i]);
-                }
-                // TODO url is constantly being overried because its a map with unique keys duh
-                this.image_url = imageUrlMap;
-            }
+            this.image_url = (imageURL != null && !imageURL.isBlank()) ? Map.of("url", imageURL) : null;
         }
     }
 

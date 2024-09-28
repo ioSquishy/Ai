@@ -1,17 +1,37 @@
 package ai;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import ai.API.OpenAI.ModerationEndpoint;
+import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
 
 public class AppTest {
     public static void main(String[] args) throws Exception {
-        String inputText = "";
+        String inputText = "testt";
         String[] inputImages = new String[] {
-            "https://cdn.discordapp.com/attachments/720032587313315962/1289312609589399664/image0.jpg?ex=66f85d70&is=66f70bf0&hm=2d1ffc6712546ecfa65a896b843442b2046e82326099307aebf8303826f25f65&",
-            "https://media.discordapp.net/attachments/777746556828123157/1289380709345267733/image.png?ex=66f89cdc&is=66f74b5c&hm=de19a3e226688c09320ea6ca80aeece7ef4428ce616189c99d1f9eee366276ce&=&format=webp&quality=lossless&width=1866&height=752",
         };
 
-        ModerationEndpoint.moderateTextAndImages(inputText, inputImages).thenAcceptAsync(modResult -> {
-            System.out.println(modResult);
+        List<CompletableFuture<ModerationResult>> cfs = new ArrayList<CompletableFuture<ModerationResult>>();
+        cfs.add(ModerationEndpoint.moderateText(inputText));
+        for (String imageURL : inputImages) {
+            cfs.add(ModerationEndpoint.moderateTextAndImage(null, imageURL));
+        }
+        CompletableFuture.runAsync(() -> {
+            CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])).thenRun(() -> {
+                ModerationResult mergedResult = ModerationResult.mergeResults(cfs.stream().map(future -> {
+                    try {
+                        return future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }).filter(result -> result != null).toArray(ModerationResult[]::new));
+                
+            });
         });
+        
     }
 }
