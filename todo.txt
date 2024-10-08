@@ -1,3 +1,4 @@
++ move the method of submitting multiple images at once from AiMod to ModerationEndpoint
 + create a helper method to see if modlog channel is present
 + make Lockdown command use files in Assets instead of imgur links
 - organize mute.java code better to be more clear
