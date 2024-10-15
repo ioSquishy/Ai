@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.bson.Document;
-import org.javacord.api.entity.user.User;
 
 import com.squareup.moshi.Json;
 import com.squareup.moshi.JsonAdapter;
@@ -36,19 +36,6 @@ public class ModerationEndpoint {
         return Http.createRequest(Http.POST(moderationEndpoint, OpenaiApi.headers, requestBodyJson));
     }
 
-    /// openai has a limit of 1 image per request, saving this for the future in case multiple can be submitted in the future
-    // private static Callable<HttpResponse<String>> createModerationRequest(String text, String[] imageURLs) {
-    //     RequestBody requestBody = new RequestBody();
-    //     requestBody.addInput(RequestBodyInput.createTextInput(text)); // add text input
-    //     for (String imageURL : imageURLs) { // add image inputs
-    //         requestBody.addInput(RequestBodyInput.createImageInput(imageURL));
-    //     }
-
-    //     String requestBodyJson = requestBodyAdapter.toJson(requestBody);
-    //     System.out.println(requestBodyJson);
-    //     return Http.createRequest(Http.POST(moderationEndpoint, OpenaiApi.headers, requestBodyJson));
-    // }
-
     public static CompletableFuture<ModerationResult> moderateText(String text) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -67,7 +54,7 @@ public class ModerationEndpoint {
         });
     }
 
-    public static CompletableFuture<ModerationResult> moderateTextAndImage(String text, String imageURL) {
+    private static CompletableFuture<ModerationResult> moderateTextAndImage(String text, String imageURL) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 // verify request success
@@ -85,30 +72,33 @@ public class ModerationEndpoint {
         });
     }
 
-    /// openai has a limit of 1 image per request, saving this for the future in case multiple can be submitted in the future
-    // /**
-    //  * Moderates text and multiple images.
-    //  * @param text
-    //  * @param imageURLs
-    //  * @return
-    //  */
-    // public static CompletableFuture<ModerationResult> moderateTextAndImages(String text, String[] imageURLs) {
-    //     return CompletableFuture.supplyAsync(() -> {
-    //         try {
-    //             // verify request success
-    //             HttpResponse<String> apiResponse = createModerationRequest(text, imageURLs).call();
-    //             if (apiResponse.statusCode() != 200) {
-    //                 throw new Exception(apiResponse.body());
-    //             }
-    
-    //             // System.out.println(apiResponse.body());
-    //             return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, imageURLs);
-    //         } catch (Exception e) {
-    //             e.printStackTrace();
-    //             throw new RuntimeException(e);
-    //         }
-    //     });
-    // }
+    public static CompletableFuture<ModerationResult> moderateTextAndImages(String text, String[] imageURLs) {
+        if (imageURLs.length == 0) return moderateText(text);
+        if (imageURLs.length == 1) return moderateTextAndImage(text, imageURLs[0]);
+
+        return CompletableFuture.supplyAsync(() -> {
+            List<CompletableFuture<ModerationResult>> cfs = new ArrayList<CompletableFuture<ModerationResult>>();
+            
+            // add ModerationEndpoint requests to list
+            cfs.add(ModerationEndpoint.moderateText(text));
+            for (String imageURL : imageURLs) {
+                cfs.add(ModerationEndpoint.moderateTextAndImage(null, imageURL));
+            }
+            
+            // wait for requests to finish
+            CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])).join();
+            
+            // return merged result
+            return ModerationResult.mergeResults(cfs.stream().map(future -> {
+                try {
+                    return future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }).filter(result -> result != null).toArray(ModerationResult[]::new));
+        });
+    }
 
     public static class ModerationResult {
         public final String id;
@@ -152,7 +142,7 @@ public class ModerationEndpoint {
             this.flagged = modObject.results.get(0).flagged;
 
             // add  inputImageURL to flaggedImageURLs if it was the reason the message got flagged
-            if (ModerationObjectCategoryInputs.anyContainsImage(modObject.results.get(0).category_applied_input_types)) {
+            if (this.flagged && ModerationObjectCategoryInputs.anyContainsImage(modObject.results.get(0).category_applied_input_types)) {
                 this.flaggedImageURLs = new String[] {inputImageURL};
             } else {
                 this.flaggedImageURLs = new String[0];
@@ -288,6 +278,7 @@ public class ModerationEndpoint {
         public List<String> illicit;
 
         public static boolean anyContainsImage(ModerationObjectCategoryInputs categoryInputs) {
+            if (categoryInputs == null) return false;
             if (categoryInputs.hate.contains("image")) return true;
             if (categoryInputs.harassment.contains("image")) return true;
             if (categoryInputs.selfharm.contains("image")) return true;

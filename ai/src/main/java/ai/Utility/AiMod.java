@@ -1,22 +1,15 @@
 package ai.Utility;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageAttachment;
-import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 
 import ai.Data.Database.DocumentUnavailableException;
-import ai.Constants.TaskSchedulerKeyPrefixs;
 import ai.API.OpenAI.ModerationEndpoint;
 import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
 import ai.Data.ServerSettings;
@@ -39,17 +32,9 @@ public class AiMod {
         // check if aimod is enabled
         if (!serverSettings.isAiModEnabled()) return;
 
-        // if message has attachments and checking images is enable
-        if (serverSettings.isAiModImageCheckEnabled() && !message.getAttachments().isEmpty()) {
-            // ModerationEndpoint.moderateTextAndImages(message.getContent(), getAttachmentURLs(message.getAttachments())).thenAcceptAsync(modResult -> {
-            //     if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
-    
-            //     // log event if applicable
-            //     User author = message.getUserAuthor().get();
-            //     if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
-            //         logMessage(author, message, modResult, serverSettings.getAiLogChannel().get());
-            //     }
-            // });
+        // if message has attachments and checking images is enabled
+        String[] imageURLs = getAttachmentURLs(message.getAttachments());
+        if (serverSettings.isAiModImageCheckEnabled() && !(imageURLs.length > 0)) {
             // moderate text and attachment together
             moderateMessageWithAttachments(message, serverSettings);
         } else {
@@ -59,43 +44,15 @@ public class AiMod {
 
     private static void moderateMessageWithAttachments(Message message, ServerSettings serverSettings) {
         String[] imageURLs = getAttachmentURLs(message.getAttachments());
-        if (imageURLs.length == 1) {
-            ModerationEndpoint.moderateTextAndImage(message.getContent(), imageURLs[0]).thenAcceptAsync(modResult -> {
-                if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
-    
-                // log event if applicable
-                User author = message.getUserAuthor().get();
-                if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
-                    logMessage(author, message, imageURLs, modResult, serverSettings.getAiLogChannel().get());
-                }
-            });
-        } else {
-            List<CompletableFuture<ModerationResult>> cfs = new ArrayList<CompletableFuture<ModerationResult>>();
-            cfs.add(ModerationEndpoint.moderateText(message.getContent()));
-            for (String imageURL : getAttachmentURLs(message.getAttachments())) {
-                cfs.add(ModerationEndpoint.moderateTextAndImage(null, imageURL));
+        ModerationEndpoint.moderateTextAndImages(message.getContent(), imageURLs).thenAcceptAsync(modResult -> {
+            if (!isFlaggedForServer(modResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
+
+            // log event if applicable
+            User author = message.getUserAuthor().get();
+            if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
+                logMessage(author, message, imageURLs, modResult, serverSettings.getAiLogChannel().get());
             }
-            CompletableFuture.runAsync(() -> {
-                CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])).thenRun(() -> {
-                    ModerationResult mergedModResult = ModerationResult.mergeResults(cfs.stream().map(future -> {
-                        try {
-                            return future.get();
-                        } catch (InterruptedException | ExecutionException e) {
-                            e.printStackTrace();
-                            return null;
-                        }
-                    }).filter(result -> result != null).toArray(ModerationResult[]::new));
-                    
-                    if (!isFlaggedForServer(mergedModResult, serverSettings) || isIgnoredChannel(serverSettings, message.getChannel().getId())) return;
-    
-                    // log event if applicable
-                    User author = message.getUserAuthor().get();
-                    if (serverSettings.isAiModEnabled() && serverSettings.getAiLogChannel().isPresent()) {
-                        logMessage(author, message, imageURLs, mergedModResult, serverSettings.getAiLogChannel().get());
-                    }
-                });
-            });
-        }
+        });
     }
 
     private static void moderateMessageText(Message message, ServerSettings serverSettings) {
