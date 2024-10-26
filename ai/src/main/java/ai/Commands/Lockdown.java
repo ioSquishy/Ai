@@ -1,9 +1,7 @@
 package ai.Commands;
 
-import java.awt.Color;
 import java.io.File;
 
-import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionState;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.permission.Role;
@@ -14,6 +12,7 @@ import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.callback.InteractionFollowupMessageBuilder;
 
 import ai.Data.Database.DocumentUnavailableException;
+import ai.Utility.LogEmbed;
 import ai.Data.ServerSettings;
 
 /**
@@ -75,28 +74,8 @@ public class Lockdown  {
         boolean initialized = lockdownState == PermissionState.DENIED;
 
         settings.getModLogChannel().ifPresent(logChannel -> {
-            if (initialized) {
-                logChannel.sendMessage(getLockdownEnabledEmbed(author));
-            } else {
-                logChannel.sendMessage(getLockdownDisabledEmbed(author));
-            }
+            logChannel.sendMessage(LogEmbed.lockdownEmbed(author, initialized));
         });
-    }
-
-    private static EmbedBuilder getLockdownEnabledEmbed(User moderator) {
-        return new EmbedBuilder()
-            .setTitle("Lockdown Enabled")
-            .setDescription("Moderator: " + moderator.getMentionTag())
-            .setColor(Color.RED)
-            .setTimestampToNow();
-    }
-
-    private static EmbedBuilder getLockdownDisabledEmbed(User moderator) {
-        return new EmbedBuilder()
-            .setTitle("Lockdown Disabled")
-            .setDescription("Moderator: " + moderator.getMentionTag())
-            .setColor(Color.GREEN)
-            .setTimestampToNow();
     }
     
 }

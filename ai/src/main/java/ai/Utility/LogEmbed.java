@@ -95,6 +95,20 @@ public class LogEmbed {
             .setTimestampToNow();
     }
 
+    public static EmbedBuilder lockdownEmbed(User moderator, boolean initiated) {
+        EmbedBuilder embed = new EmbedBuilder()
+            .setDescription("Moderator: " + moderator.getMentionTag())
+            .setTimestampToNow();
+        if (initiated) {
+            embed.setColor(Color.RED);
+            embed.setTitle("Lockdown Enabled");
+        } else {
+            embed.setColor(Color.GREEN);
+            embed.setTitle("Lockdown Disabled");
+        }
+        return embed;
+    }
+
     public static EmbedBuilder aiModEmbed(User offender, String messageLink, Optional<String[]> imageURLs, ModerationResult modResult) {
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("AiMod: Message Flagged")
