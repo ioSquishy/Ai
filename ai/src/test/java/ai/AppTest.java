@@ -16,13 +16,9 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 public class AppTest {
     public static void main(String[] args) throws Exception {
-        DiscordApi api = new DiscordApiBuilder().setToken(Dotenv.load().get("DISCORD_TOKEN")).setAllIntents().login().join();
-        File openDoorGif = new File("ai\\src\\main\\Assets\\open_door.gif");
-        try {
-            api.getTextChannelById(842061663389614220L).get().sendMessage(openDoorGif).get();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        long tta = 5439768;
+        String s = (tta/1000) + "s and " + (tta%1000) + "ms";
+        System.out.println(s);
         // String inputText = "testt";
         // String[] inputImages = new String[] {
         // };

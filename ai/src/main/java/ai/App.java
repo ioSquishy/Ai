@@ -6,6 +6,7 @@ import ai.Events.MessageEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
 import ai.Events.SlashCommandEvent;
+import ai.Experiments.RuleAcceptTime;
 import ai.Commands.*;
 import ai.Data.Database;
 
@@ -65,6 +66,9 @@ public class App implements Serializable {
 
         GatewayEvent.addReconnectionListener();
         GatewayEvent.addLostConnectionListener();
+
+        // experiments
+        RuleAcceptTime.createPendingListener();
     }
     
 }

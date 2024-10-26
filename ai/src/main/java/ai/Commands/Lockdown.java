@@ -1,7 +1,5 @@
 package ai.Commands;
 
-import java.io.File;
-
 import org.javacord.api.entity.permission.PermissionState;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.entity.permission.Role;
@@ -9,7 +7,6 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
-import org.javacord.api.interaction.callback.InteractionFollowupMessageBuilder;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Utility.LogEmbed;
