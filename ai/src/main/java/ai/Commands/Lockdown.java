@@ -19,9 +19,8 @@ import ai.Data.ServerSettings;
  * Locks down the server by setting the @everyone roles Send Message Permission to disabled.
  */
 public class Lockdown  {
-    private static final File openDoorGif = new File("ai\\src\\main\\Assets\\open_door.gif");
-    private static final File slamDoorGif = new File("ai\\src\\main\\Assets\\slam_door.gif");
-
+    private static final String openDoorGif = "https://github.com/ioSquishy/Ai/blob/main/ai/src/main/Assets/open_door.gif?raw=true";
+    private static final String slamDoorGif = "https://github.com/ioSquishy/Ai/blob/main/ai/src/main/Assets/slam_door.gif?raw=true";
 
     public static void handleCommand(SlashCommandInteraction interaction) {
         Server server = interaction.getServer().get();
@@ -29,15 +28,8 @@ public class Lockdown  {
         PermissionState newLockdownState = server.getEveryoneRole().getPermissions().getState(PermissionType.SEND_MESSAGES) == PermissionState.ALLOWED ? PermissionState.DENIED : PermissionState.ALLOWED;
         updateEveryoneRolePermissions(server, newLockdownState);
 
-
-        System.out.println(slamDoorGif.getAbsolutePath());
-        InteractionFollowupMessageBuilder response = interaction.createFollowupMessageBuilder();
-        if (newLockdownState == PermissionState.DENIED) { // if lockdown was initialized
-            response.addAttachment(slamDoorGif);
-        } else {
-            response.addAttachment(openDoorGif);
-        }
-        response.setContent("??").send();
+        String gifLink = newLockdownState == PermissionState.DENIED ? slamDoorGif : openDoorGif;
+        interaction.createImmediateResponder().setContent(gifLink).respond();
 
         ServerSettings serverSettings;
         try {

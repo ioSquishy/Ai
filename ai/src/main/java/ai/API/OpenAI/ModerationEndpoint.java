@@ -207,6 +207,7 @@ public class ModerationEndpoint {
     /// open ai object classes
     // input body classes
     private static class RequestBody {
+        @SuppressWarnings("unused")
         public final String model = "omni-moderation-latest";
         public List<RequestBodyInput> input;
 
@@ -223,6 +224,7 @@ public class ModerationEndpoint {
     }
 
     private static class RequestBodyInput {
+        @SuppressWarnings("unused")
         public final String type;
         public String text = null;
         public Map<String, String> image_url = null;

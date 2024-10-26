@@ -1,4 +1,3 @@
-+ make Lockdown command use files in Assets instead of imgur links
 + create a helper method to see if modlog channel is present
 - organize mute.java code better to be more clear
 + add a better logging system that adds exceptions to server document
