@@ -204,7 +204,8 @@ public class ModerationEndpoint {
         }
     }
 
-    /// open ai object classes
+    /* openai json conversion classes */
+
     // input body classes
     private static class RequestBody {
         @SuppressWarnings("unused")
@@ -222,7 +223,6 @@ public class ModerationEndpoint {
             this.input.add(input);
         }
     }
-
     private static class RequestBodyInput {
         @SuppressWarnings("unused")
         public final String type;
@@ -255,13 +255,11 @@ public class ModerationEndpoint {
         public String id;
         private List<ModerationObjectResults> results;
     }
-
     private static class ModerationObjectResults {
         public boolean flagged;
         public ModerationObjectCategories categories;
         public ModerationObjectCategoryInputs category_applied_input_types;
     }
-
     private static class ModerationObjectCategories {
         public boolean hate;
         public boolean harassment;
@@ -270,7 +268,6 @@ public class ModerationEndpoint {
         public boolean violence;
         public boolean illicit;
     }
-
     private static class ModerationObjectCategoryInputs {
         public List<String> hate;
         public List<String> harassment;

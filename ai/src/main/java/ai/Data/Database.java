@@ -80,7 +80,7 @@ public class Database implements Serializable {
 
     private static void mongoNotOK() {
         System.out.println("Mongo is NOT OK!!");
-        // App.api.getUserById("263049275196309506").join().sendMessage("MongoDB failed to connect :(");
+        App.api.getUserById("263049275196309506").join().sendMessage("MongoDB failed to connect :(");
         if (mongoOK) {
             mongoOK = false;
             resetDownUpTime();
@@ -101,42 +101,32 @@ public class Database implements Serializable {
             out.close();
             fos.close();
         } catch (Exception e) {
-            App.api.getUserById("263049275196309506").join().sendMessage("Cache did not manually save... RIP");
-            App.api.disconnect();
+            App.api.getUserById("263049275196309506").join().sendMessage("Cache did not manually save...");
         }
     }
 
     protected static ServerDocument getServerDoc(long serverID) throws DocumentUnavailableException {
-        ServerDocument doc = checkCache(serverID);
+        ServerDocument doc = serverCache.get(serverID);
         if (doc != null) { // if doc in cache return cached doc
             return doc;
         } else { // if doc not in cache check database
             doc = checkDatabase(serverID);
         }
         if (doc != null) { // if doc in database add doc to cache and return doc
-            putDocInCache(serverID, doc);
+            serverCache.put(serverID, doc);
             return doc;
         } else if (mongoOK) { // if doc not retrieved from database check if mongo is ok
             // if mongo is ok create a new doc in database and add to cache
-            doc = createNewDoc(serverID);
-            putDocInCache(serverID, doc);
+            doc = new ServerDocument(serverID);
+            serverCache.put(serverID, doc);
             return doc;
         } else {
             throw new DocumentUnavailableException("Database unreachable and server not in cache.");
         }
     }
-    private static ServerDocument checkCache(long serverID) {
-        return serverCache.get(serverID);
-    }
     private static ServerDocument checkDatabase(long serverID) throws DocumentUnavailableException {
         Document document = mongoOK ? mongoServerCollection.find(eq("_id", serverID)).first() : null;
         return document != null ? ServerDocument.fromBsonDocument(document) : null;
-    }
-    private static ServerDocument createNewDoc(long serverID) {
-        return new ServerDocument(serverID);
-    }
-    private static void putDocInCache(long serverID, ServerDocument serverDocument) {
-        serverCache.put(serverID, serverDocument);
     }
 
     private static transient final ReplaceOptions replaceOpts = new ReplaceOptions().upsert(true);

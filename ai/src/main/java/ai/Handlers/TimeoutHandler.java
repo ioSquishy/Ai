@@ -30,7 +30,7 @@ public class TimeoutHandler {
                 }
             }
         } catch (DocumentUnavailableException e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
     }
 

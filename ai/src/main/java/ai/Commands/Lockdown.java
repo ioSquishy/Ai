@@ -10,6 +10,7 @@ import org.javacord.api.interaction.SlashCommandInteraction;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Utility.LogEmbed;
+import ai.Utility.PermissionsCheck;
 import ai.Data.ServerSettings;
 
 /**
@@ -22,16 +23,27 @@ public class Lockdown  {
     public static void handleCommand(SlashCommandInteraction interaction) {
         Server server = interaction.getServer().get();
 
+        // check permissions
+        if (!PermissionsCheck.canManageRoles(server)) {
+            interaction.createImmediateResponder().setContent("I cannot manage roles!").respond();
+            return;
+        }
+
+        // lockdown server
         PermissionState newLockdownState = server.getEveryoneRole().getPermissions().getState(PermissionType.SEND_MESSAGES) == PermissionState.ALLOWED ? PermissionState.DENIED : PermissionState.ALLOWED;
         updateEveryoneRolePermissions(server, newLockdownState);
 
+        // respond to command
         String gifLink = newLockdownState == PermissionState.DENIED ? slamDoorGif : openDoorGif;
         interaction.createImmediateResponder().setContent(gifLink).respond();
 
+        // log if applicable
         ServerSettings serverSettings;
         try {
             serverSettings = new ServerSettings(server);
-            logLockdownEvent(interaction.getUser(), serverSettings, newLockdownState);
+            if (serverSettings.isModLogEnabled() && serverSettings.isLogLockdownsEnabled()) {
+                logLockdownEvent(interaction.getUser(), serverSettings, newLockdownState);
+            }
         } catch (DocumentUnavailableException e) {
             // e.printStackTrace();
         }
@@ -63,6 +75,7 @@ public class Lockdown  {
         boolean initialized = lockdownState == PermissionState.DENIED;
 
         settings.getModLogChannel().ifPresent(logChannel -> {
+            if (!PermissionsCheck.canSendMessages(logChannel, true)) return;
             logChannel.sendMessage(LogEmbed.lockdownEmbed(author, initialized));
         });
     }

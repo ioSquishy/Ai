@@ -43,6 +43,7 @@ public class ServerDocument {
                 protected boolean logBans = true;
                 protected boolean logMutes = true;
                 protected boolean logKicks = true;
+                protected boolean logLockdowns = true;
             }
             
             protected AiModSettings aiModSettings = new AiModSettings();
@@ -51,9 +52,6 @@ public class ServerDocument {
                 protected Long aiLogChannelID = null;
                 protected List<Long> ignoredChannels = Collections.<Long>emptyList();
                 protected boolean checkImages = true;
-
-                // protected boolean autoMuteEnabled = true;
-                // protected int autoMuteWarnThreshold = 3; // mutes user after 3 warnings
 
                 protected boolean flagHate = true;
                 protected boolean flagHarrassment = true;

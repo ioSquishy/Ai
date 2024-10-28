@@ -15,6 +15,7 @@ import ai.Data.Database.DocumentUnavailableException;
 import ai.App;
 import ai.Data.ServerSettings;
 import ai.Utility.LogEmbed;
+import ai.Utility.PermissionsCheck;
 import ai.Utility.LogEmbed.EmbedType;
 
 public class BanHandler {
@@ -75,7 +76,9 @@ public class BanHandler {
     private static void logBan(ServerSettings serverSettings, AuditLogEntry lastBanEntry) {
         serverSettings.getModLogChannel().ifPresent(channel -> {
             try {
-                channel.sendMessage(LogEmbed.getEmbed(EmbedType.Ban, lastBanEntry.getTarget().get().asUser().get(), lastBanEntry.getUser().get(), lastBanEntry.getReason().orElse("")));
+                if (PermissionsCheck.canSendMessages(channel, true)) {
+                    channel.sendMessage(LogEmbed.getEmbed(EmbedType.Ban, lastBanEntry.getTarget().get().asUser().get(), lastBanEntry.getUser().get(), lastBanEntry.getReason().orElse("")));
+                }
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
@@ -85,6 +88,8 @@ public class BanHandler {
     private static void logUnban(ServerSettings serverSettings, ServerMemberUnbanEvent unbanEvent, AuditLogEntry lastUnbanEntry) {
         serverSettings.getModLogChannel().ifPresent(channel -> {
             try {
+                if (!PermissionsCheck.canSendMessages(channel, true)) return;
+
                 String reason = lastUnbanEntry.getReason().orElse("");
                 User moderator = lastUnbanEntry.getUser().get(3, TimeUnit.SECONDS);
 

@@ -25,7 +25,7 @@ import ai.Data.Database.DocumentUnavailableException;
 import ai.Handlers.JoinHandler;
 
 public class SettingsCommand {
-    public static SlashCommandBuilder createSettingsCommand() {
+    public static SlashCommandBuilder createCommand() {
         return new SlashCommandBuilder()
             .setName("settings")
             .setDescription("Check modlog settings.")

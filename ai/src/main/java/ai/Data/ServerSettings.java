@@ -119,6 +119,10 @@ public class ServerSettings {
         return modLogSettings().logKicks;
     }
 
+    public boolean isLogLockdownsEnabled() {
+        return modLogSettings().logLockdowns;
+    }
+
     // ai mod
     public boolean isAiModEnabled() {
         return aiModSettings().aiModEnabled;

@@ -13,6 +13,7 @@ import org.javacord.api.interaction.SlashCommandOptionBuilder;
 import org.javacord.api.interaction.SlashCommandOptionType;
 
 import ai.Utility.InteractionException;
+import ai.Utility.PermissionsCheck;
 
 public class Purge {
     public static SlashCommandBuilder createCommand() {
@@ -43,6 +44,12 @@ public class Purge {
 
     public static void handleCommand(SlashCommandInteraction event) {
         TextChannel channel = event.getChannel().orElseThrow();
+
+        if (!PermissionsCheck.canDeleteMessages(channel)) {
+            event.createImmediateResponder().setContent("I cannot delete messages.").respond();
+            return;
+        }
+
         long fromMsgID;
         long untilMsgID;
         try {
