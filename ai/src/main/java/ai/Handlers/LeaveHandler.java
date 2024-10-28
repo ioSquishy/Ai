@@ -11,6 +11,7 @@ import org.javacord.api.event.server.member.ServerMemberLeaveEvent;
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Data.ServerSettings;
 import ai.Utility.LogEmbed;
+import ai.Utility.PermissionsCheck;
 import ai.Utility.LogEmbed.EmbedType;
 
 public class LeaveHandler {
@@ -54,6 +55,7 @@ public class LeaveHandler {
 
     private AuditLogEntry lastAuditEntry;
     private boolean wasKicked() {
+        if (!PermissionsCheck.canReadAuditLog(leaveEvent.getServer(), true)) return false;
         try {
             AuditLog auditLog = leaveEvent.getServer().getAuditLog(1).get(2, TimeUnit.SECONDS);
             if (auditLog.getEntries().isEmpty()) return false;
@@ -67,9 +69,11 @@ public class LeaveHandler {
 
     private void logKick() {
         serverSettings.getModLogChannel().ifPresent(logChannel -> {
-            logChannel.sendMessage(LogEmbed.getEmbed(
-                EmbedType.Kick, lastAuditEntry.getTarget().get().asUser().join(), lastAuditEntry.getUser().join(), lastAuditEntry.getReason().orElse("")
-            ));
+            if (PermissionsCheck.canSendMessages(logChannel, true)) {
+                logChannel.sendMessage(LogEmbed.getEmbed(
+                    EmbedType.Kick, lastAuditEntry.getTarget().get().asUser().join(), lastAuditEntry.getUser().join(), lastAuditEntry.getReason().orElse("")
+                ));
+            }
         });
     }
 }

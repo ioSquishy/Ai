@@ -1,6 +1,7 @@
 package ai.Handlers;
 
 import java.time.Instant;
+import java.util.concurrent.ExecutionException;
 
 import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
@@ -46,14 +47,24 @@ public class TimeoutHandler {
     }
 
     private static void logTimeout(UserChangeTimeoutEvent event, ServerSettings serverSettings, AuditLogEntry lastTimeout) {
-        try {
-            if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
-                serverSettings.getModLogChannel().get().sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
-            } else {
-                serverSettings.getModLogChannel().get().sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
-            }
-        } catch (Exception e) {
-
+        if (event.getNewTimeout().isPresent()) { //checks if timeout was set or removed
+            serverSettings.getModLogChannel().ifPresent(channel -> {
+                if (!PermissionsCheck.canSendMessages(channel, true)) return;
+                try {
+                    channel.sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
+                } catch (InterruptedException | ExecutionException e) {
+                    // e.printStackTrace();
+                }
+            });
+        } else {
+            serverSettings.getModLogChannel().ifPresent(channel -> {
+                if (!PermissionsCheck.canSendMessages(channel, true)) return;
+                try {
+                    channel.sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 }

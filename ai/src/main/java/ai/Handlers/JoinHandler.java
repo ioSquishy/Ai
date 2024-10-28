@@ -14,6 +14,7 @@ import org.javacord.api.event.server.member.ServerMemberJoinEvent;
 
 import ai.App;
 import ai.Data.Database.DocumentUnavailableException;
+import ai.Utility.PermissionsCheck;
 import ai.Data.ServerSettings;
 
 public class JoinHandler {
@@ -73,6 +74,7 @@ public class JoinHandler {
 
     public void sendJoinMessage() {
         serverSettings.getJoinMessageChannel().ifPresent(channel -> {
+            if (!PermissionsCheck.canSendMessages(channel, true)) return;
             channel.sendMessage(getJoinMessage());
         });
     }
