@@ -9,7 +9,7 @@ import org.javacord.api.event.user.UserChangePendingEvent;
 import ai.App;
 
 public class RuleAcceptTime {
-    private static long botSetupChannelID = 818259653175148544L;
+    private static long experimentChannel = 1306119031580917821L;
 
     public static void createPendingListener() {
         App.api.addUserChangePendingListener(event -> {
@@ -28,8 +28,8 @@ public class RuleAcceptTime {
 
         long timeToAccept = ruleAcceptTimeMilliEpoch - joinTimeMilliEpoch;
 
-        server.getChannelById(botSetupChannelID).ifPresent(channel -> {
-            String logMessage = user.getMentionTag() + " accepted rules in " + (timeToAccept/1000) + "s and " + (timeToAccept%1000) + "ms";
+        server.getChannelById(experimentChannel).ifPresent(channel -> {
+            String logMessage = user.getName() + " " + user.getMentionTag() + " accepted rules in " + (timeToAccept/1000) + "s and " + (timeToAccept%1000) + "ms";
             channel.asTextChannel().get().sendMessage(logMessage);
         });
     }

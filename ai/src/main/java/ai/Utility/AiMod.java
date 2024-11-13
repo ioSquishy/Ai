@@ -11,7 +11,7 @@ import org.javacord.api.entity.user.User;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.API.OpenAI.ModerationEndpoint;
-import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
+import ai.API.OpenAI.ModerationResult;
 import ai.Data.ServerSettings;
 
 public class AiMod {

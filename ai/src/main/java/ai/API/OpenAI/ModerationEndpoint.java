@@ -2,19 +2,17 @@ package ai.API.OpenAI;
 
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.bson.Document;
 
-import com.squareup.moshi.Json;
 import com.squareup.moshi.JsonAdapter;
 
 import ai.App;
+import ai.API.OpenAI.RequestBody.*;
 import ai.Utility.Http;
 
 public class ModerationEndpoint {
@@ -98,193 +96,5 @@ public class ModerationEndpoint {
                 }
             }).filter(result -> result != null).toArray(ModerationResult[]::new));
         });
-    }
-
-    public static class ModerationResult {
-        public final String id;
-        public final String inputText;
-        public final String[] flaggedImageURLs;
-        public final boolean flagged;
-        public final Flags flags;
-        public static class Flags {
-            public final boolean hate;
-            public final boolean harassment;
-            public final boolean selfHarm;
-            public final boolean sexual;
-            public final boolean violence;
-            public final boolean illicit;
-            
-            public Flags(boolean hate, boolean harassment, boolean selfHarm, boolean sexual, boolean violence, boolean illicit) {
-                this.hate = hate;
-                this.harassment = harassment;
-                this.selfHarm = selfHarm;
-                this.sexual = sexual;
-                this.violence = violence;
-                this.illicit = illicit;
-            }
-
-            @Override
-            public String toString() {
-                String reasons = "";
-                if (hate) reasons += "hate, ";
-                if (harassment) reasons += "harassment, ";
-                if (selfHarm) reasons += "self-harm, ";
-                if (sexual) reasons += "sexual, ";
-                if (violence) reasons += "violence, ";
-                if (illicit) reasons += "illicit, ";
-                return reasons.isEmpty() ? "" : reasons.substring(0, reasons.length()-2);
-            }
-        }
-
-        public ModerationResult(ModerationObject modObject, String inputText, String inputImageURL) {
-            this.id = modObject.id;
-            this.inputText = inputText != null ? inputText : "";
-            this.flagged = modObject.results.get(0).flagged;
-
-            // add  inputImageURL to flaggedImageURLs if it was the reason the message got flagged
-            if (this.flagged && ModerationObjectCategoryInputs.anyContainsImage(modObject.results.get(0).category_applied_input_types)) {
-                this.flaggedImageURLs = new String[] {inputImageURL};
-            } else {
-                this.flaggedImageURLs = new String[0];
-            }
-
-            // set flags
-            ModerationObjectCategories categories = modObject.results.get(0).categories;
-            this.flags = new Flags(categories.hate, categories.harassment, categories.selfharm, categories.sexual, categories.violence, categories.illicit);
-        }
-
-        private ModerationResult(String id, String inputText, String[] flaggedImageURLs, boolean flagged, Flags flags) {
-            this.id = id;
-            this.inputText = inputText;
-            this.flaggedImageURLs = flaggedImageURLs;
-            this.flagged = flagged;
-            this.flags = flags;
-        }
-
-        /**
-         * Merges multiple moderation results to override each other with preference for 'true' flags
-         * @param results
-         * @return one composite ModerationResult
-         */
-        public static ModerationResult mergeResults(ModerationResult... results) {
-            String id = "";
-            String inputText = "";
-            ArrayList<String> flaggedImageURLs = new ArrayList<String>();
-            boolean flagged = false;
-            boolean hate = false;
-            boolean harassment = false;
-            boolean selfHarm = false;
-            boolean sexual = false;
-            boolean violence = false;
-            boolean illicit = false;
-
-            for (ModerationResult result : results) {
-                id += result.id + " ";
-                inputText += result.inputText + "\n";
-                if (result.flaggedImageURLs != null) {
-                    flaggedImageURLs.addAll(Arrays.asList(result.flaggedImageURLs));
-                }
-                if (result.flagged) flagged = true;
-                if (result.flags.hate) hate = true;
-                if (result.flags.harassment) harassment = true;
-                if (result.flags.selfHarm) selfHarm = true;
-                if (result.flags.sexual) sexual = true;
-                if (result.flags.violence) violence = true;
-                if (result.flags.illicit) illicit = true;
-            }
-
-            id = id.strip();
-            inputText = inputText.strip();
-            Flags flags = new Flags(hate, harassment, selfHarm, sexual, violence, illicit);
-            return new ModerationResult(id, inputText, flaggedImageURLs.toArray(String[]::new), flagged, flags);
-        }
-
-        public String toString() {
-            return "id: " + id + "\ninputText: " + inputText + "\nflagged: " + flagged + "\nflagReasons: " + flags.toString();
-        }
-    }
-
-    /* openai json conversion classes */
-
-    // input body classes
-    private static class RequestBody {
-        @SuppressWarnings("unused")
-        public final String model = "omni-moderation-latest";
-        public List<RequestBodyInput> input;
-
-        public RequestBody() {
-            this.input = new ArrayList<RequestBodyInput>();
-        }
-
-        public void addInput(RequestBodyInput input) {
-            if (input.text == null && input.image_url == null) {
-                return;
-            }
-            this.input.add(input);
-        }
-    }
-    private static class RequestBodyInput {
-        @SuppressWarnings("unused")
-        public final String type;
-        public String text = null;
-        public Map<String, String> image_url = null;
-
-        public static RequestBodyInput createTextInput(String text) {
-            return new RequestBodyInput("text", text, null);
-        }
-
-        public static RequestBodyInput createImageInput(String imageURL) {
-            return new RequestBodyInput("image_url", null, imageURL);
-        }
-
-        /**
-         * Creates an input for the RequestBody class
-         * @param type can be either "text" or "image_url"
-         * @param text text to be moderated if type is "text"
-         * @param imageURLs image to be moderated if type is "image_url"
-         */
-        private RequestBodyInput(String type, String text, String imageURL) {
-            this.type = type;
-            this.text = (text != null && !text.isBlank()) ? text : null;
-            this.image_url = (imageURL != null && !imageURL.isBlank()) ? Map.of("url", imageURL) : null;
-        }
-    }
-
-    // response classes
-    private static class ModerationObject {
-        public String id;
-        private List<ModerationObjectResults> results;
-    }
-    private static class ModerationObjectResults {
-        public boolean flagged;
-        public ModerationObjectCategories categories;
-        public ModerationObjectCategoryInputs category_applied_input_types;
-    }
-    private static class ModerationObjectCategories {
-        public boolean hate;
-        public boolean harassment;
-        public @Json(name = "self-harm") boolean selfharm;
-        public boolean sexual;
-        public boolean violence;
-        public boolean illicit;
-    }
-    private static class ModerationObjectCategoryInputs {
-        public List<String> hate;
-        public List<String> harassment;
-        public @Json(name = "self-harm") List<String> selfharm;
-        public List<String> sexual;
-        public List<String> violence;
-        public List<String> illicit;
-
-        public static boolean anyContainsImage(ModerationObjectCategoryInputs categoryInputs) {
-            if (categoryInputs == null) return false;
-            if (categoryInputs.hate.contains("image")) return true;
-            if (categoryInputs.harassment.contains("image")) return true;
-            if (categoryInputs.selfharm.contains("image")) return true;
-            if (categoryInputs.sexual.contains("image")) return true;
-            if (categoryInputs.violence.contains("image")) return true;
-            if (categoryInputs.illicit.contains("image")) return true;
-            return false;
-        }
     }
 }

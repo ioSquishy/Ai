@@ -80,7 +80,6 @@ public class Database implements Serializable {
 
     private static void mongoNotOK() {
         System.out.println("Mongo is NOT OK!!");
-        App.api.getUserById("263049275196309506").join().sendMessage("MongoDB failed to connect :(");
         if (mongoOK) {
             mongoOK = false;
             resetDownUpTime();
@@ -89,6 +88,7 @@ public class Database implements Serializable {
             autoCacheExe = Executors.newSingleThreadScheduledExecutor();
             autoCacheExe.scheduleAtFixedRate(checkMongo, 10, 10, TimeUnit.MINUTES);
         }
+        App.api.getUserById("263049275196309506").join().sendMessage("MongoDB failed to connect :(");
     }
 
     private static void saveCacheLocally() {
@@ -155,6 +155,7 @@ public class Database implements Serializable {
     }
 
     public static void removeServer(long serverID) {
+        System.out.println("Removed server: " + serverID);
         serverCache.remove(serverID);
         mongoServerCollection.deleteOne(eq("_id", serverID));
     }

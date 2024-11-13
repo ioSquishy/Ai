@@ -7,7 +7,7 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.InteractionBase;
 
-import ai.API.OpenAI.ModerationEndpoint.ModerationResult;
+import ai.API.OpenAI.ModerationResult;
 
 public class LogEmbed {
     public static enum EmbedType {
