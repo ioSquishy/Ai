@@ -7,6 +7,7 @@ import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.user.UserChangeTimeoutEvent;
+import org.tinylog.Logger;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.App;
@@ -31,7 +32,7 @@ public class TimeoutHandler {
                 }
             }
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            Logger.warn(e);
         }
     }
 
@@ -53,7 +54,7 @@ public class TimeoutHandler {
                 try {
                     channel.sendMessage(LogEmbed.getEmbed(EmbedType.Mute, event.getUser(), lastTimeout.getUser().get(), new ReadableTime().compute(event.getNewTimeout().get().getEpochSecond()-Instant.now().getEpochSecond()), lastTimeout.getReason().orElse("")));
                 } catch (InterruptedException | ExecutionException e) {
-                    // e.printStackTrace();
+                    Logger.error(e);
                 }
             });
         } else {
@@ -62,7 +63,7 @@ public class TimeoutHandler {
                 try {
                     channel.sendMessage(LogEmbed.getEmbed(EmbedType.Unmute, event.getUser(), lastTimeout.getUser().get()));
                 } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                    Logger.error(e);
                 }
             });
         }

@@ -8,6 +8,7 @@ import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageAttachment;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
+import org.tinylog.Logger;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.API.OpenAI.ModerationEndpoint;
@@ -26,6 +27,7 @@ public class AiMod {
         try {
             serverSettings = new ServerSettings(server);
         } catch (DocumentUnavailableException e) {
+            Logger.debug(e);
             return;
         }
 

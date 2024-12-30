@@ -1,1 +1,1 @@
-+ add a better logging system that adds exceptions to server document
++ add info/trace level logging

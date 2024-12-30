@@ -3,6 +3,7 @@ package ai.Utility;
 import org.javacord.api.entity.channel.ServerTextChannel;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder;
+import org.tinylog.Logger;
 
 import ai.App;
 import ai.Data.ServerSettings;
@@ -72,6 +73,7 @@ public class TaskScheduler {
      * @param content content
      */
     public static void sendErrorMessage(long serverID, String content) {
+        Logger.warn(content);
         App.api.getServerById(serverID).ifPresent(server -> {
             ServerTextChannel errorChannel;
             try {
@@ -85,7 +87,9 @@ public class TaskScheduler {
                             .setMentionEveryoneAndHere(false)
                             .build())
                     .send(errorChannel);
-            } catch (DocumentUnavailableException e) {}
+            } catch (DocumentUnavailableException e) {
+                Logger.debug(e);
+            }
         });
     }
 }

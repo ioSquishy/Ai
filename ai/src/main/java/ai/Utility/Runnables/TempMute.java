@@ -3,6 +3,7 @@ package ai.Utility.Runnables;
 import java.util.concurrent.ExecutionException;
 
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.tinylog.Logger;
 
 import ai.App;
 import ai.Utility.LogEmbed;
@@ -32,7 +33,9 @@ public class TempMute {
                     App.api.getYourself(), 
                     "Temporary mute duration over.");
                 new EmbedDelay(embed, logChannelID, serverID).sendEmbedRunnable().run();
-            } catch (InterruptedException | ExecutionException e) {}
+            } catch (InterruptedException | ExecutionException e) {
+                Logger.error(e);
+            }
             
         };
     }

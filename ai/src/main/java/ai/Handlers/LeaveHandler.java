@@ -7,6 +7,7 @@ import org.javacord.api.entity.auditlog.AuditLogActionType;
 import org.javacord.api.entity.auditlog.AuditLogEntry;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.event.server.member.ServerMemberLeaveEvent;
+import org.tinylog.Logger;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Data.ServerSettings;
@@ -24,7 +25,7 @@ public class LeaveHandler {
             ServerSettings serverSettings = new ServerSettings(server);
             new LeaveHandler(serverSettings, event).handleIfKick();
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            Logger.debug(e);
         }
     }
 
@@ -62,6 +63,7 @@ public class LeaveHandler {
             lastAuditEntry = auditLog.getEntries().get(0);
             return lastAuditEntry.getType() == AuditLogActionType.MEMBER_KICK;
         } catch (Exception e) {
+            Logger.error(e);
             return false;
         }
         

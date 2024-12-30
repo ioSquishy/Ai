@@ -10,6 +10,7 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.SlashCommandOptionBuilder;
 import org.javacord.api.interaction.SlashCommandOptionType;
+import org.tinylog.Logger;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Data.ServerSettings;
@@ -48,6 +49,7 @@ public class Unmute {
             try {
                 muteRole = settings.getMuteRole().orElseThrow();
             } catch (NoSuchElementException e) { // thrown if bad muterole
+                Logger.debug(e);
                 interaction.createImmediateResponder().setContent("You do not have a valid mute role set!").respond();
                 return;
             }
@@ -61,6 +63,7 @@ public class Unmute {
             // respond
             interaction.createImmediateResponder().setContent(targetUser.getName() + " was unmuted.").setFlags(MessageFlag.EPHEMERAL).respond();
         } catch (DocumentUnavailableException e) {
+            Logger.debug(e);
             DocumentUnavailableException.sendStandardResponse(interaction);
         }
     }

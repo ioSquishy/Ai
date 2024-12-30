@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.bson.Document;
+import org.tinylog.Logger;
 
 import com.squareup.moshi.JsonAdapter;
 
@@ -46,7 +47,7 @@ public class ModerationEndpoint {
                 // System.out.println(apiResponse.body());
                 return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, null);
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error(e);
                 throw new RuntimeException(e);
             }
         });
@@ -64,7 +65,7 @@ public class ModerationEndpoint {
                 // System.out.println(apiResponse.body());
                 return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, imageURL);
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error(e);
                 throw new RuntimeException(e);
             }
         });
@@ -91,7 +92,7 @@ public class ModerationEndpoint {
                 try {
                     return future.get();
                 } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                    Logger.error(e);
                     return null;
                 }
             }).filter(result -> result != null).toArray(ModerationResult[]::new));

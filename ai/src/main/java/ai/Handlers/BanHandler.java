@@ -10,6 +10,7 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.event.server.member.ServerMemberBanEvent;
 import org.javacord.api.event.server.member.ServerMemberUnbanEvent;
+import org.tinylog.Logger;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.App;
@@ -31,7 +32,7 @@ public class BanHandler {
                 }
             }
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            Logger.debug(e);
         }
     }
 
@@ -45,7 +46,7 @@ public class BanHandler {
                 logUnban(serverSettings, unbanEvent, lastUnban);
             }
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            Logger.debug(e);
         }
     }
 
@@ -69,6 +70,7 @@ public class BanHandler {
                 return false;
             }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Logger.error(e);
             return false;
         }
     }
@@ -80,7 +82,7 @@ public class BanHandler {
                     channel.sendMessage(LogEmbed.getEmbed(EmbedType.Ban, lastBanEntry.getTarget().get().asUser().get(), lastBanEntry.getUser().get(), lastBanEntry.getReason().orElse("")));
                 }
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                Logger.error(e);
             }
         });
     }
@@ -99,7 +101,7 @@ public class BanHandler {
                     try {
                         moderator = unbanEvent.getApi().getUserById(reasonAndModerator[1]).get(3, TimeUnit.SECONDS);
                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                        e.printStackTrace();
+                        Logger.error(e);
                     }
                 }
 
@@ -109,7 +111,7 @@ public class BanHandler {
                     moderator,
                     reason));
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                e.printStackTrace();
+                Logger.error(e);
             }
         });
     }

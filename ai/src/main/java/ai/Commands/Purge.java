@@ -11,6 +11,7 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.SlashCommandOptionBuilder;
 import org.javacord.api.interaction.SlashCommandOptionType;
+import org.tinylog.Logger;
 
 import ai.Utility.InteractionException;
 import ai.Utility.PermissionsCheck;
@@ -79,7 +80,7 @@ public class Purge {
                                 return message.getAuthor().getId() != authorIdToKeep;
                             });
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Logger.error(e);
                         }
                     }
                     // delete messages and respond
@@ -88,10 +89,10 @@ public class Purge {
                     });
                 });
             } catch (InteractionException e) {
-                e.printStackTrace();
+                Logger.error(e);
                 responseUpdater.setContent(e.getExceptionMessage()).setFlags(MessageFlag.EPHEMERAL).update();
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error(e);
                 responseUpdater.setContent("Failed.").setFlags(MessageFlag.EPHEMERAL).update();
             }
         });

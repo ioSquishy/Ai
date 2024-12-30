@@ -7,6 +7,7 @@ import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
+import org.tinylog.Logger;
 
 import ai.Data.Database.DocumentUnavailableException;
 import ai.Utility.LogEmbed;
@@ -45,7 +46,7 @@ public class Lockdown  {
                 logLockdownEvent(interaction.getUser(), serverSettings, newLockdownState);
             }
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            Logger.debug(e);
         }
     }
 

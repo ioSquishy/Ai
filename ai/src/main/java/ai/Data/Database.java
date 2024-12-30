@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import static com.mongodb.client.model.Filters.eq;
 import org.bson.Document;
 import org.javacord.api.interaction.InteractionBase;
+import org.tinylog.Logger;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -60,7 +61,7 @@ public class Database implements Serializable {
             mongoDatabase = mongoClient.getDatabase("dev");
             mongoServerCollection = mongoDatabase.getCollection("ai-servers");
             // getDatabase will throw an exception if cluster is unreachable
-            System.out.println("Database Connected");
+            Logger.tag("sysout").info("Database Connected");
 
             if (mongoOK) { // if mongo was ok previously
                 autoCacheExe.scheduleAtFixedRate(autoCache, 10, 10, TimeUnit.SECONDS);
@@ -71,15 +72,15 @@ public class Database implements Serializable {
                 autoCacheExe = Executors.newSingleThreadScheduledExecutor();
                 autoCacheExe.scheduleAtFixedRate(autoCache, 10, 10, TimeUnit.SECONDS);
             }
-            System.out.println("autoCacheExe running!");
+            Logger.info("autoCacheExe running");
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error(e);
             mongoNotOK();
         }
     }
 
     private static void mongoNotOK() {
-        System.out.println("Mongo is NOT OK!!");
+        Logger.warn("Mongo is NOT OK!!");
         if (mongoOK) {
             mongoOK = false;
             resetDownUpTime();
@@ -101,6 +102,7 @@ public class Database implements Serializable {
             out.close();
             fos.close();
         } catch (Exception e) {
+            Logger.error(e);
             App.api.getUserById("263049275196309506").join().sendMessage("Cache did not manually save...");
         }
     }
@@ -149,13 +151,13 @@ public class Database implements Serializable {
                 mongoServerCollection.bulkWrite(writeReqs, bulkOpts);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error(e);
             mongoNotOK();
         }
     }
 
     public static void removeServer(long serverID) {
-        System.out.println("Removed server: " + serverID);
+        Logger.info("Removed server: {}", serverID);
         serverCache.remove(serverID);
         mongoServerCollection.deleteOne(eq("_id", serverID));
     }
@@ -167,6 +169,10 @@ public class Database implements Serializable {
 
         public DocumentUnavailableException(String message) {
             super(message);
+        }
+
+        public DocumentUnavailableException(Exception e) {
+            super(e);
         }
 
         public static String getStandardResponseString() {

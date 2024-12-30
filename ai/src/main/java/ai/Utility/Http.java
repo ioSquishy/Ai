@@ -11,6 +11,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import org.tinylog.Logger;
+
 /**
  * Basic abstraction of Http request methods for use with JSON inputs.
  * Good tutorial: https://youtu.be/9oq7Y8n1t00?si=t60rcjT-dZAJmqQA
@@ -27,7 +29,7 @@ public class Http {
             request.POST(BodyPublishers.ofString(jsonBody));
             return request.build();
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error(e);
             return null;
         }
     }
@@ -38,7 +40,7 @@ public class Http {
             request.GET();
             return request.build();
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error(e);
             return null;
         }
     }
@@ -82,18 +84,5 @@ public class Http {
         request.uri(new URI(uri));
         headers.forEach(request::header);
         return request;
-    }
-
-    /**
-     * Exception class
-     */
-    public class HttpException extends RuntimeException {
-        public HttpException() {
-            super();
-        }
-    
-        public HttpException(String message) {
-            super(message);
-        }
     }
 }

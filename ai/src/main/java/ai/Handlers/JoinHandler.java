@@ -11,6 +11,7 @@ import org.javacord.api.DiscordApi;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.event.server.member.ServerMemberJoinEvent;
+import org.tinylog.Logger;
 
 import ai.App;
 import ai.Data.Database.DocumentUnavailableException;
@@ -28,7 +29,7 @@ public class JoinHandler {
                 handler.sendJoinMessage();
             }
         } catch (DocumentUnavailableException e) {
-            // e.printStackTrace();
+            Logger.debug(e);
         }
         
     }

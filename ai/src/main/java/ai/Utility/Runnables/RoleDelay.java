@@ -3,6 +3,7 @@ package ai.Utility.Runnables;
 import java.util.NoSuchElementException;
 
 import org.javacord.api.entity.permission.Role;
+import org.tinylog.Logger;
 
 import ai.App;
 import ai.Utility.TaskScheduler;
@@ -25,6 +26,7 @@ public class RoleDelay {
                 App.api.getUserById(userID).thenAcceptAsync(user -> user.addRole(role, "role delay"));
             } catch (NoSuchElementException e) {
                 // if role no longer exists send message to the server somewhere
+                Logger.warn(e);
                 TaskScheduler.sendErrorMessage(serverID, ("Failed to add <@&" + roleID + "> to <@" + userID + ">"));
             }
         };
@@ -37,6 +39,7 @@ public class RoleDelay {
                 App.api.getUserById(userID).thenAcceptAsync(user -> user.removeRole(role, "role delay"));
             } catch (NoSuchElementException e) {
                 // if role no longer exists send message to the server somewhere
+                Logger.warn(e);
                 TaskScheduler.sendErrorMessage(serverID, ("Failed to remove <@&" + roleID + "> to <@" + userID + ">"));
             }
         };

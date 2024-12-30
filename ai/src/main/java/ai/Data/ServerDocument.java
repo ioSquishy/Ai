@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bson.Document;
+import org.tinylog.Logger;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonDataException;
@@ -111,8 +112,8 @@ public class ServerDocument {
         try {
             return documentAdapter.fromJson(json);
         } catch (JsonDataException | IOException e) {
-            e.printStackTrace();
-            throw new DocumentUnavailableException(e.getMessage());
+            Logger.error(e);
+            throw new DocumentUnavailableException(e);
         }
     }
     

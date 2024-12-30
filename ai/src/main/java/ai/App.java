@@ -11,6 +11,7 @@ import ai.Data.Database;
 
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.tinylog.Logger;
 
 import com.squareup.moshi.Moshi;
 
@@ -65,6 +66,8 @@ public class App implements Serializable {
 
         GatewayEvent.registerReconnectionListener();
         GatewayEvent.registerLostConnectionListener();
+
+        Logger.tag("sysout").info("App initialized!");
     }
     
 }
