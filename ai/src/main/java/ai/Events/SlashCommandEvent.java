@@ -9,7 +9,7 @@ import ai.Commands.*;
 
 public class SlashCommandEvent {
 
-    public static ListenerManager<SlashCommandCreateListener> addSlashCommandCreateListener() {
+    public static ListenerManager<SlashCommandCreateListener> registerSlashCommandCreateListener() {
         return App.api.addSlashCommandCreateListener(event -> {
             SlashCommandInteraction interaction = event.getSlashCommandInteraction();
             

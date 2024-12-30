@@ -25,7 +25,6 @@ public class Http {
         try {
             HttpRequest.Builder request = buildRequestHead(uri, headers);
             request.POST(BodyPublishers.ofString(jsonBody));
-            // System.out.println("Http 29: \n" + jsonBody);
             return request.build();
         } catch (Exception e) {
             e.printStackTrace();

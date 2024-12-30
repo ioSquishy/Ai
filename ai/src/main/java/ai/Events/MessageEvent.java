@@ -8,7 +8,7 @@ import ai.Utility.AiMod;
 
 public class MessageEvent {
     
-    public static ListenerManager<MessageCreateListener> addMessageCreateListener() {
+    public static ListenerManager<MessageCreateListener> registerMessageCreateListener() {
         return App.api.addMessageCreateListener(event -> {
             AiMod.moderateMessage(event.getMessage());
         });

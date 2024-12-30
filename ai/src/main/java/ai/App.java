@@ -6,7 +6,6 @@ import ai.Events.MessageEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
 import ai.Events.SlashCommandEvent;
-import ai.Experiments.RuleAcceptTime;
 import ai.Commands.*;
 import ai.Data.Database;
 
@@ -50,25 +49,22 @@ public class App implements Serializable {
         );
         
         // add event listeners
-        SlashCommandEvent.addSlashCommandCreateListener();
+        SlashCommandEvent.registerSlashCommandCreateListener();
 
-        MessageEvent.addMessageCreateListener();
+        MessageEvent.registerMessageCreateListener();
 
-        ComponentEvent.addModalSubmitListener();
+        ComponentEvent.registerModalSubmitListener();
 
-        ServerMemberEvent.addJoinListener();
-        ServerMemberEvent.addLeaveListener();
-        ServerMemberEvent.addBanListener();
-        ServerMemberEvent.addUnbanListener();
-        ServerMemberEvent.addTimeoutChangeListener();
+        ServerMemberEvent.registerJoinListener();
+        ServerMemberEvent.registerLeaveListener();
+        ServerMemberEvent.registerBanListener();
+        ServerMemberEvent.registerUnbanListener();
+        ServerMemberEvent.registerTimeoutChangeListener();
         
-        ServerEvent.addLeaveListener();
+        ServerEvent.registerMemberLeaveListener();
 
-        GatewayEvent.addReconnectionListener();
-        GatewayEvent.addLostConnectionListener();
-
-        // experiments
-        RuleAcceptTime.createPendingListener();
+        GatewayEvent.registerReconnectionListener();
+        GatewayEvent.registerLostConnectionListener();
     }
     
 }

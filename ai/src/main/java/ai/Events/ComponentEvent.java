@@ -11,7 +11,7 @@ import ai.Commands.SettingsCommand;
 
 public class ComponentEvent {
 
-    public static ListenerManager<ModalSubmitListener> addModalSubmitListener() {
+    public static ListenerManager<ModalSubmitListener> registerModalSubmitListener() {
         return App.api.addModalSubmitListener(event -> {
             ModalInteraction interaction = event.getModalInteraction();
             
