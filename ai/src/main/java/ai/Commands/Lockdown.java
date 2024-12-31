@@ -18,8 +18,8 @@ import ai.Data.ServerSettings;
  * Locks down the server by setting the @everyone roles Send Message Permission to disabled.
  */
 public class Lockdown  {
-    private static final String openDoorGif = "https://github.com/ioSquishy/Ai/blob/main/ai/src/main/Assets/open_door.gif?raw=true";
-    private static final String slamDoorGif = "https://github.com/ioSquishy/Ai/blob/main/ai/src/main/Assets/slam_door.gif?raw=true";
+    private static final String openDoorGif = "https://github.com/ioSquishy/Ai/blob/main/ai/src/main/resources/Media/open_door.gif?raw=true";
+    private static final String slamDoorGif = "https://github.com/ioSquishy/Ai/blob/main/ai/src/main/resources/Media/slam_door.gif?raw=true";
 
     public static void handleCommand(SlashCommandInteraction interaction) {
         Server server = interaction.getServer().get();
