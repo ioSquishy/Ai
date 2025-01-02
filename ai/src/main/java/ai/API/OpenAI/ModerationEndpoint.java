@@ -44,7 +44,7 @@ public class ModerationEndpoint {
                     throw new Exception(apiResponse.body());
                 }
     
-                // System.out.println(apiResponse.body());
+                Logger.tag("ai").debug("Moderation response body: \n{}", apiResponse.body());
                 return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, null);
             } catch (Exception e) {
                 Logger.error(e);
@@ -62,7 +62,7 @@ public class ModerationEndpoint {
                     throw new Exception(apiResponse.body());
                 }
     
-                // System.out.println(apiResponse.body());
+                Logger.tag("ai").debug("Moderation response body: \n{}", apiResponse.body());
                 return new ModerationResult(moderationObjectAdapter.fromJson(apiResponse.body()), text, imageURL);
             } catch (Exception e) {
                 Logger.error(e);

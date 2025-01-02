@@ -39,7 +39,7 @@ public class SettingsCommand {
             ServerSettings settings = new ServerSettings(interaction.getServer().get());
             interaction.respondWithModal(CustomID.SETTINGS_MODAL, "Settings", createSettingsModalComponents(settings));
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             DocumentUnavailableException.sendStandardResponse(interaction);
         }
     }
@@ -91,10 +91,10 @@ public class SettingsCommand {
                 .addEmbed(getUpdatedSettingsEmbed(oldSettingsJson, newSettingsJson))
                 .addEmbed(getJoinMessageEmbed(settings));
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             responseMessage.setContent(DocumentUnavailableException.getStandardResponseString());
         } catch (JsonDataException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             responseMessage.setContent("Invalid settings JSON. No changes applied.");
         } finally {
             responseMessage.respond();

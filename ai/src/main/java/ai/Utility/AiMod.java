@@ -27,7 +27,7 @@ public class AiMod {
         try {
             serverSettings = new ServerSettings(server);
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             return;
         }
 
@@ -36,11 +36,15 @@ public class AiMod {
 
         // if message has attachments and checking images is enabled
         String[] imageURLs = getAttachmentURLs(message.getAttachments());
-        if (serverSettings.isAiModImageCheckEnabled() && !(imageURLs.length > 0)) {
-            // moderate text and attachment together
-            moderateMessageWithAttachments(message, serverSettings);
-        } else {
-            moderateMessageText(message, serverSettings);
+        try {
+            if (serverSettings.isAiModImageCheckEnabled() && !(imageURLs.length > 0)) {
+                // moderate text and attachment together
+                moderateMessageWithAttachments(message, serverSettings);
+            } else {
+                moderateMessageText(message, serverSettings);
+            }
+        } catch (Exception e) {
+            Logger.error(e);
         }
     }
 

@@ -46,7 +46,7 @@ public class Lockdown  {
                 logLockdownEvent(interaction.getUser(), serverSettings, newLockdownState);
             }
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
         }
     }
 

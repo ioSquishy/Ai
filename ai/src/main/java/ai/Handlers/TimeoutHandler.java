@@ -32,7 +32,7 @@ public class TimeoutHandler {
                 }
             }
         } catch (DocumentUnavailableException e) {
-            Logger.warn(e);
+            Logger.tag("ai").debug(e);
         }
     }
 

@@ -25,7 +25,7 @@ public class LeaveHandler {
             ServerSettings serverSettings = new ServerSettings(server);
             new LeaveHandler(serverSettings, event).handleIfKick();
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
         }
     }
 

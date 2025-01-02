@@ -58,6 +58,7 @@ public class Purge {
             fromMsgID = Long.parseLong(fromValue);
             untilMsgID = Long.parseLong(event.getArgumentStringValueByName("until").orElseThrow());
         } catch (NumberFormatException e) {
+            Logger.tag("ai").debug(e);
             new InteractionException("Not a valid input for from/until options. Enter the ID of the messages.").sendExceptionResponse(event);
             return;
         }
@@ -102,6 +103,7 @@ public class Purge {
         try {
             return interaction.getChannel().get().getMessageById(messageID).get(1, TimeUnit.SECONDS);
         } catch (Exception e) {
+            Logger.tag("ai").debug(e);
             throw new InteractionException("Could not find a message with id `" + messageID + "`.");
         }
     }

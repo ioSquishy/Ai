@@ -88,7 +88,7 @@ public class TaskScheduler {
                             .build())
                     .send(errorChannel);
             } catch (DocumentUnavailableException e) {
-                Logger.debug(e);
+                Logger.tag("ai").debug(e);
             }
         });
     }

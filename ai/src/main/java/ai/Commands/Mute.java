@@ -85,7 +85,7 @@ public class Mute {
         try {
             settings = new ServerSettings(interaction.getServer().get());
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             DocumentUnavailableException.sendStandardResponse(interaction);
             return;
         }
@@ -106,13 +106,13 @@ public class Mute {
             
             checkPermissions(server, muteRole, moderator, mutedUser);
         } catch (NoSuchElementException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             // if mute role doesnt exist
             String errorResponse = "You do not have a valid mute role set.";
             interaction.createImmediateResponder().setContent(errorResponse).respond();
             return;
         } catch (InteractionException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
             e.sendExceptionResponse(interaction);
             return;
         }

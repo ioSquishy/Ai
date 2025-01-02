@@ -32,7 +32,7 @@ public class BanHandler {
                 }
             }
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
         }
     }
 
@@ -46,7 +46,7 @@ public class BanHandler {
                 logUnban(serverSettings, unbanEvent, lastUnban);
             }
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
         }
     }
 

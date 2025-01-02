@@ -96,11 +96,9 @@ public class Database implements Serializable {
         try {
             File file = new File("cache.ser");
             file.createNewFile();
-            FileOutputStream fos = new FileOutputStream(file);
-            ObjectOutputStream out = new ObjectOutputStream(fos);
-            out.writeObject(serverCache);
-            out.close();
-            fos.close();
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
+                out.writeObject(serverCache);
+            }
         } catch (Exception e) {
             Logger.error(e);
             App.api.getUserById("263049275196309506").join().sendMessage("Cache did not manually save...");
@@ -157,7 +155,7 @@ public class Database implements Serializable {
     }
 
     public static void removeServer(long serverID) {
-        Logger.info("Removed server: {}", serverID);
+        Logger.tag("ai").debug("Removed server: {}", serverID);
         serverCache.remove(serverID);
         mongoServerCollection.deleteOne(eq("_id", serverID));
     }

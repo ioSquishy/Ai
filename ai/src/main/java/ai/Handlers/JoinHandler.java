@@ -29,7 +29,7 @@ public class JoinHandler {
                 handler.sendJoinMessage();
             }
         } catch (DocumentUnavailableException e) {
-            Logger.debug(e);
+            Logger.tag("ai").debug(e);
         }
         
     }
