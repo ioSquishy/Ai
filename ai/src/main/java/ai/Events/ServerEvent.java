@@ -8,7 +8,7 @@ import ai.Data.Database;
 
 public class ServerEvent {
 
-    public static ListenerManager<ServerLeaveListener> registerMemberLeaveListener() {
+    public static ListenerManager<ServerLeaveListener> registerServerLeaveListener() {
         return App.api.addServerLeaveListener(event -> {
             Database.removeServer(event.getServer().getId());
         });

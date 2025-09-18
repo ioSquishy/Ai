@@ -62,7 +62,7 @@ public class App implements Serializable {
         ServerMemberEvent.registerUnbanListener();
         ServerMemberEvent.registerTimeoutChangeListener();
         
-        ServerEvent.registerMemberLeaveListener();
+        ServerEvent.registerServerLeaveListener();
 
         GatewayEvent.registerReconnectionListener();
         GatewayEvent.registerLostConnectionListener();
