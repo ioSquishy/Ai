@@ -2,10 +2,8 @@ package ai.API.OpenAI;
 
 import java.util.Map;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 public class OpenaiApi {
-    private static final String apiKey = Dotenv.load().get("OPENAI_KEY");
+    private static final String apiKey = System.getenv("OPEN_AI_KEY");
     
     protected static final Map<String, String> headers = Map.of(
         "Content-Type", "application/json",

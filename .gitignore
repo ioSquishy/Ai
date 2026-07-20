@@ -1,2 +1,4 @@
 .env
 log.txt
+.vscode/launch.json
+cache.ser

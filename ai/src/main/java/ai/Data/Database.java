@@ -1,7 +1,5 @@
 package ai.Data;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
@@ -27,10 +25,8 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 
-import ai.App;
-
 public class Database implements Serializable {
-    private static transient final String connectionString = "mongodb+srv://squishydb:" + Dotenv.load().get("MONGO_PASS") + "@sandbox.ujgwpn6.mongodb.net/?retryWrites=true&w=majority";
+    private static transient final String connectionString = "mongodb+srv://squishydb:" + System.getenv("MONGO_PASS") + "@sandbox.ujgwpn6.mongodb.net/?appName=Sandbox&w=majority";
     private static transient MongoClient mongoClient;
     private static transient MongoDatabase mongoDatabase;
     private static transient MongoCollection<Document> mongoServerCollection;
@@ -89,19 +85,17 @@ public class Database implements Serializable {
             autoCacheExe = Executors.newSingleThreadScheduledExecutor();
             autoCacheExe.scheduleAtFixedRate(checkMongo, 10, 10, TimeUnit.MINUTES);
         }
-        App.api.getUserById("263049275196309506").join().sendMessage("MongoDB failed to connect :(");
     }
 
     private static void saveCacheLocally() {
         try {
-            File file = new File("cache.ser");
+            File file = new File("data/cache.ser");
             file.createNewFile();
             try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
                 out.writeObject(serverCache);
             }
         } catch (Exception e) {
-            Logger.error(e);
-            App.api.getUserById("263049275196309506").join().sendMessage("Cache did not manually save...");
+            Logger.error("Cache did not manually save", e);
         }
     }
 

@@ -6,6 +6,7 @@ import ai.Events.MessageEvent;
 import ai.Events.ServerEvent;
 import ai.Events.ServerMemberEvent;
 import ai.Events.SlashCommandEvent;
+import ai.Utility.HealthUpdate;
 import ai.Commands.*;
 import ai.Data.Database;
 
@@ -19,12 +20,10 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.Set;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 public class App implements Serializable {
     private static final long serialVersionUID = 0;
 
-    public static final DiscordApi api = new DiscordApiBuilder().setToken(Dotenv.load().get("DISCORD_TOKEN")).setAllIntents().login().join();
+    public static final DiscordApi api = new DiscordApiBuilder().setToken(System.getenv("DISCORD_TOKEN")).setAllIntents().login().join();
     public static boolean gatewayDisconnected = false;
 
     public static final Moshi Moshi = new Moshi.Builder().build();
@@ -33,6 +32,7 @@ public class App implements Serializable {
     public static transient final String version = "2";
     public static transient final long botID = App.api.getYourself().getId();
     public static void main(String[] args) {
+        HealthUpdate.start();
         Database.initMongoDB();
 
         // create/update slash commands
